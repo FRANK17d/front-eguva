@@ -81,15 +81,17 @@ export default function Navbar() {
                     {/* Actions */}
                     <div className="flex items-center space-x-1 sm:space-x-3">
                         {/* Wishlist */}
-                        <button
+                        <Link
+                            to="/favoritos"
                             className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors cursor-pointer"
                             aria-label="Lista de deseos"
                         >
                             <span className="material-icons text-gray-600 dark:text-gray-300">favorite_border</span>
-                        </button>
+                        </Link>
 
                         {/* Cart */}
-                        <button
+                        <Link
+                            to="/carrito"
                             className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors relative cursor-pointer"
                             aria-label="Carrito de compras"
                         >
@@ -97,7 +99,7 @@ export default function Navbar() {
                             <span className="absolute top-0 right-0 h-5 w-5 bg-primary dark:bg-white text-white dark:text-primary rounded-full text-xs font-bold flex items-center justify-center">
                                 0
                             </span>
-                        </button>
+                        </Link>
 
                         {/* User Account */}
                         <div className="relative" ref={accountMenuRef}>
