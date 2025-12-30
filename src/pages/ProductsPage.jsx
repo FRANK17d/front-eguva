@@ -79,7 +79,7 @@ const allProducts = [
 const categories = [
     { id: 'todos', name: 'Todos', icon: 'grid_view' },
     { id: 'ropa', name: 'Ropa', icon: 'checkroom' },
-    { id: 'zapatos', name: 'Zapatos', icon: 'steps' },
+    { id: 'zapatos', name: 'Zapatos', icon: 'directions_walk' },
     { id: 'accesorios', name: 'Accesorios', icon: 'watch' },
 ];
 

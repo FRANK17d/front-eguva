@@ -15,7 +15,7 @@ const categories = [
         name: 'Zapatos',
         description: 'Tenis, tacones, botas, sandalias y calzado casual.',
         itemCount: 28,
-        icon: 'steps',
+        icon: 'directions_walk',
         image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&h=800&fit=crop',
     },
     {
