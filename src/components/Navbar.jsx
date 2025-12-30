@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import logoEguva from '../assets/logo-eguva.png';
 
 export default function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+    const accountMenuRef = useRef(null);
     const location = useLocation();
 
     useEffect(() => {
@@ -16,7 +18,18 @@ export default function Navbar() {
     }, []);
 
     useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (accountMenuRef.current && !accountMenuRef.current.contains(event.target)) {
+                setIsAccountMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
         setIsMobileMenuOpen(false);
+        setIsAccountMenuOpen(false);
     }, [location]);
 
     const navLinks = [
@@ -31,8 +44,8 @@ export default function Navbar() {
     return (
         <nav
             className={`fixed w-full z-50 transition-all duration-300 ${isScrolled
-                    ? 'bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md shadow-sm'
-                    : 'bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md'
+                ? 'bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md shadow-sm'
+                : 'bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md'
                 } border-b border-gray-200 dark:border-gray-800`}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -54,8 +67,8 @@ export default function Navbar() {
                                 key={link.name}
                                 to={link.href}
                                 className={`text-sm font-medium transition-colors relative group cursor-pointer ${isActive(link.href)
-                                        ? 'text-primary dark:text-white'
-                                        : 'text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-white'
+                                    ? 'text-primary dark:text-white'
+                                    : 'text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-white'
                                     }`}
                             >
                                 {link.name}
@@ -87,12 +100,46 @@ export default function Navbar() {
                         </button>
 
                         {/* User Account */}
-                        <button
-                            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors cursor-pointer"
-                            aria-label="Mi cuenta"
-                        >
-                            <span className="material-icons text-gray-600 dark:text-gray-300">person_outline</span>
-                        </button>
+                        <div className="relative" ref={accountMenuRef}>
+                            <button
+                                className={`p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-all cursor-pointer ${isAccountMenuOpen ? 'bg-gray-200 dark:bg-gray-800' : ''}`}
+                                onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
+                                aria-label="Mi cuenta"
+                            >
+                                <span className="material-icons text-gray-600 dark:text-gray-300">person_outline</span>
+                            </button>
+
+                            {/* Dropdown Popup */}
+                            <div
+                                className={`absolute right-0 mt-3 w-56 bg-white dark:bg-card-dark rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden transition-all duration-300 transform origin-top-right ${isAccountMenuOpen
+                                    ? 'opacity-100 scale-100'
+                                    : 'opacity-0 scale-95 pointer-events-none'
+                                    }`}
+                            >
+                                <div className="p-4 border-b border-gray-100 dark:border-gray-800">
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Bienvenido a Eguva</p>
+                                </div>
+                                <div className="p-2">
+                                    <Link
+                                        to="/iniciar-sesión"
+                                        className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors group"
+                                    >
+                                        <span className="material-icons text-xl text-gray-400 group-hover:text-primary dark:group-hover:text-white transition-colors">login</span>
+                                        Iniciar sesión
+                                    </Link>
+                                    <Link
+                                        to="/registro"
+                                        className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors group"
+                                    >
+                                        <span className="material-icons text-xl text-gray-400 group-hover:text-primary dark:group-hover:text-white transition-colors">person_add_alt</span>
+                                        Registrarse
+                                    </Link>
+                                </div>
+                                <div className="p-3 bg-gray-50 dark:bg-gray-900/50">
+                                    <p className="text-[10px] text-gray-400 text-center">Moda sostenible con propósito</p>
+                                </div>
+                            </div>
+                        </div>
 
                         {/* Mobile Menu Toggle */}
                         <button
@@ -118,8 +165,8 @@ export default function Navbar() {
                                 key={link.name}
                                 to={link.href}
                                 className={`px-4 py-3 text-sm font-medium rounded-lg transition-colors cursor-pointer ${isActive(link.href)
-                                        ? 'bg-primary/10 dark:bg-white/10 text-primary dark:text-white'
-                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                    ? 'bg-primary/10 dark:bg-white/10 text-primary dark:text-white'
+                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                                     }`}
                             >
                                 {link.name}
@@ -131,3 +178,4 @@ export default function Navbar() {
         </nav>
     );
 }
+
