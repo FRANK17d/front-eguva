@@ -9,8 +9,8 @@ const footerLinks = {
     ],
     ayuda: [
         { name: 'Sobre Nosotros', href: '/sobre-nosotros' },
-        { name: 'Preguntas Frecuentes', href: '#faq' },
-        { name: 'Políticas de Envío', href: '#envios' },
+        { name: 'Preguntas Frecuentes', href: '/preguntas-frecuentes' },
+        { name: 'Políticas de Envío', href: '/politicas-de-envio' },
     ],
 };
 
@@ -73,8 +73,8 @@ export default function Footer() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors cursor-pointer ${social.name === 'WhatsApp'
-                                            ? 'bg-green-600 hover:bg-green-500'
-                                            : 'bg-gray-800 hover:bg-white hover:text-primary'
+                                        ? 'bg-green-600 hover:bg-green-500'
+                                        : 'bg-gray-800 hover:bg-white hover:text-primary'
                                         }`}
                                     aria-label={`Síguenos en ${social.name}`}
                                 >

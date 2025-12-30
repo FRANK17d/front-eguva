@@ -11,6 +11,8 @@ import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import CartPage from './pages/CartPage';
 import WishlistPage from './pages/WishlistPage';
+import FAQPage from './pages/FAQPage';
+import ShippingPolicyPage from './pages/ShippingPolicyPage';
 
 // Layout wrapper that conditionally shows Navbar and Footer
 function Layout({ children }) {
@@ -60,6 +62,8 @@ function App() {
           <Route path="/recuperar-contraseña" element={<ForgotPasswordPage />} />
           <Route path="/carrito" element={<CartPage />} />
           <Route path="/favoritos" element={<WishlistPage />} />
+          <Route path="/preguntas-frecuentes" element={<FAQPage />} />
+          <Route path="/politicas-de-envio" element={<ShippingPolicyPage />} />
         </Routes>
       </Layout>
     </Router>
