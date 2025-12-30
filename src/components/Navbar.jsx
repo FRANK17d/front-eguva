@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import logoEguva from '../assets/logo-eguva.png';
 
 export default function Navbar() {
@@ -8,6 +9,8 @@ export default function Navbar() {
     const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
     const accountMenuRef = useRef(null);
     const location = useLocation();
+    const navigate = useNavigate();
+    const { user, isAuthenticated, isAdmin, logout } = useAuth();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -40,6 +43,12 @@ export default function Navbar() {
     ];
 
     const isActive = (path) => location.pathname === path;
+
+    const handleLogout = async () => {
+        setIsAccountMenuOpen(false);
+        await logout();
+        navigate('/');
+    };
 
     return (
         <nav
@@ -101,52 +110,80 @@ export default function Navbar() {
                             </span>
                         </Link>
 
-                        {/* User Account */}
+                        {/* Account Dropdown */}
                         <div className="relative" ref={accountMenuRef}>
                             <button
-                                className={`p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-all cursor-pointer ${isAccountMenuOpen ? 'bg-gray-200 dark:bg-gray-800' : ''}`}
                                 onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
-                                aria-label="Mi cuenta"
+                                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors cursor-pointer"
+                                aria-label="Cuenta de usuario"
                             >
-                                <span className="material-icons text-gray-600 dark:text-gray-300">person_outline</span>
+                                <span className="material-icons text-gray-600 dark:text-gray-300">person</span>
                             </button>
 
-                            {/* Dropdown Popup */}
-                            <div
-                                className={`absolute right-0 mt-3 w-56 bg-white dark:bg-card-dark rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden transition-all duration-300 transform origin-top-right ${isAccountMenuOpen
-                                    ? 'opacity-100 scale-100'
-                                    : 'opacity-0 scale-95 pointer-events-none'
-                                    }`}
-                            >
-                                <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Bienvenido a Eguva</p>
+                            {/* Dropdown Menu */}
+                            {isAccountMenuOpen && (
+                                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-card-dark rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 py-2 animate-fade-in">
+                                    {isAuthenticated ? (
+                                        <>
+                                            {/* User Info */}
+                                            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                                                <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                                                    {user?.nombre}
+                                                </p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-widest mt-1">
+                                                    {user?.rol === 'administrador' ? 'Administrador' : 'Usuario'}
+                                                </p>
+                                            </div>
+
+                                            {/* Admin Panel Link (only for admins) */}
+                                            {isAdmin && (
+                                                <Link
+                                                    to="/admin"
+                                                    className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                                                >
+                                                    <span className="material-icons text-primary dark:text-white text-xl">dashboard</span>
+                                                    <span className="font-medium">Panel de Administración</span>
+                                                </Link>
+                                            )}
+
+                                            {/* Logout */}
+                                            <button
+                                                onClick={handleLogout}
+                                                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+                                            >
+                                                <span className="material-icons text-xl">logout</span>
+                                                <span className="font-medium">Cerrar sesión</span>
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {/* Login Link */}
+                                            <Link
+                                                to="/iniciar-sesión"
+                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                                            >
+                                                <span className="material-icons text-primary dark:text-white text-xl">login</span>
+                                                <span className="font-medium">Iniciar sesión</span>
+                                            </Link>
+
+                                            {/* Register Link */}
+                                            <Link
+                                                to="/registro"
+                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                                            >
+                                                <span className="material-icons text-primary dark:text-white text-xl">person_add</span>
+                                                <span className="font-medium">Crear cuenta</span>
+                                            </Link>
+                                        </>
+                                    )}
                                 </div>
-                                <div className="p-2">
-                                    <Link
-                                        to="/iniciar-sesión"
-                                        className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors group"
-                                    >
-                                        <span className="material-icons text-xl text-gray-400 group-hover:text-primary dark:group-hover:text-white transition-colors">login</span>
-                                        Iniciar sesión
-                                    </Link>
-                                    <Link
-                                        to="/registro"
-                                        className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors group"
-                                    >
-                                        <span className="material-icons text-xl text-gray-400 group-hover:text-primary dark:group-hover:text-white transition-colors">person_add_alt</span>
-                                        Registrarse
-                                    </Link>
-                                </div>
-                                <div className="p-3 bg-gray-50 dark:bg-gray-900/50">
-                                    <p className="text-[10px] text-gray-400 text-center">Moda sostenible con propósito</p>
-                                </div>
-                            </div>
+                            )}
                         </div>
 
-                        {/* Mobile Menu Toggle */}
+                        {/* Mobile Menu Button */}
                         <button
-                            className="md:hidden p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors cursor-pointer"
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            className="md:hidden p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors cursor-pointer"
                             aria-label="Menú"
                         >
                             <span className="material-icons text-gray-600 dark:text-gray-300">
@@ -155,20 +192,19 @@ export default function Navbar() {
                         </button>
                     </div>
                 </div>
+            </div>
 
-                {/* Mobile Menu */}
-                <div
-                    className={`md:hidden overflow-hidden transition-all duration-300 ${isMobileMenuOpen ? 'max-h-80 pb-4' : 'max-h-0'
-                        }`}
-                >
-                    <div className="flex flex-col space-y-2 pt-2">
+            {/* Mobile Menu */}
+            {isMobileMenuOpen && (
+                <div className="md:hidden bg-white dark:bg-card-dark border-t border-gray-200 dark:border-gray-800 animate-fade-in">
+                    <div className="px-2 pt-2 pb-3 space-y-1">
                         {navLinks.map((link) => (
                             <Link
                                 key={link.name}
                                 to={link.href}
-                                className={`px-4 py-3 text-sm font-medium rounded-lg transition-colors cursor-pointer ${isActive(link.href)
-                                    ? 'bg-primary/10 dark:bg-white/10 text-primary dark:text-white'
-                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                className={`block px-3 py-2 rounded-md text-base font-medium cursor-pointer ${isActive(link.href)
+                                    ? 'bg-gray-100 dark:bg-gray-800 text-primary dark:text-white'
+                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-primary dark:hover:text-white'
                                     }`}
                             >
                                 {link.name}
@@ -176,8 +212,7 @@ export default function Navbar() {
                         ))}
                     </div>
                 </div>
-            </div>
+            )}
         </nav>
     );
 }
-

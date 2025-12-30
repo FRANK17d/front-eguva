@@ -1,31 +1,29 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { registerSchema } from '../schemas/authSchemas';
+import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
 
 export default function RegisterPage() {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        acceptTerms: false,
-    });
+    const navigate = useNavigate();
+    const { register: registerUser } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [errors, setErrors] = useState({});
+    const [error, setError] = useState('');
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
-        // Clear error when user types
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
-        }
-    };
+    const {
+        register,
+        handleSubmit,
+        watch,
+        formState: { errors }
+    } = useForm({
+        resolver: zodResolver(registerSchema)
+    });
+
+    const password = watch('contrasena', '');
 
     const getPasswordStrength = (password) => {
         let strength = 0;
@@ -36,60 +34,27 @@ export default function RegisterPage() {
         return strength;
     };
 
-    const passwordStrength = getPasswordStrength(formData.password);
+    const passwordStrength = getPasswordStrength(password);
     const strengthLabels = ['Muy débil', 'Débil', 'Media', 'Fuerte', 'Muy fuerte'];
     const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-lime-500', 'bg-green-500'];
 
-    const validateForm = () => {
-        const newErrors = {};
-
-        if (!formData.name.trim()) {
-            newErrors.name = 'El nombre es requerido';
-        } else if (formData.name.trim().length < 2) {
-            newErrors.name = 'El nombre debe tener al menos 2 caracteres';
-        }
-
-        if (!formData.email) {
-            newErrors.email = 'El correo electrónico es requerido';
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = 'Ingresa un correo electrónico válido';
-        }
-
-        if (!formData.password) {
-            newErrors.password = 'La contraseña es requerida';
-        } else if (formData.password.length < 8) {
-            newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
-        }
-
-        if (!formData.confirmPassword) {
-            newErrors.confirmPassword = 'Confirma tu contraseña';
-        } else if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Las contraseñas no coinciden';
-        }
-
-        if (!formData.acceptTerms) {
-            newErrors.acceptTerms = 'Debes aceptar los términos y condiciones';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!validateForm()) return;
-
+    const onSubmit = async (data) => {
         setIsLoading(true);
-        // Simular llamada a API
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsLoading(false);
+        setError('');
 
-        // TODO: Implementar lógica real de registro
-        console.log('Register submitted:', formData);
+        try {
+            // Eliminar confirmPassword antes de enviar
+            const { confirmPassword, ...userData } = data;
+            await registerUser(userData);
+            navigate('/iniciar-sesión');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Error al registrar usuario');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleGoogleRegister = () => {
-        // TODO: Implementar registro con Google
         console.log('Google register clicked');
     };
 
@@ -126,6 +91,14 @@ export default function RegisterPage() {
                             </p>
                         </div>
 
+                        {/* Error Message */}
+                        {error && (
+                            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400">
+                                <span className="material-icons text-sm">error</span>
+                                <span className="text-sm">{error}</span>
+                            </div>
+                        )}
+
                         {/* Google Register Button */}
                         <button
                             onClick={handleGoogleRegister}
@@ -155,10 +128,10 @@ export default function RegisterPage() {
                         </div>
 
                         {/* Register Form */}
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             {/* Name */}
                             <div>
-                                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Nombre completo
                                 </label>
                                 <div className="relative">
@@ -167,25 +140,23 @@ export default function RegisterPage() {
                                     </span>
                                     <input
                                         type="text"
-                                        id="name"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        className={`w-full pl-11 pr-4 py-3 rounded-xl border ${errors.name ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
+                                        id="nombre"
+                                        {...register('nombre')}
+                                        className={`w-full pl-11 pr-4 py-3 rounded-xl border ${errors.nombre ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
                                         placeholder="Tu nombre"
                                     />
                                 </div>
-                                {errors.name && (
+                                {errors.nombre && (
                                     <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
                                         <span className="material-icons text-sm">error</span>
-                                        {errors.name}
+                                        {errors.nombre.message}
                                     </p>
                                 )}
                             </div>
 
                             {/* Email */}
                             <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label htmlFor="correo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Correo electrónico
                                 </label>
                                 <div className="relative">
@@ -194,25 +165,23 @@ export default function RegisterPage() {
                                     </span>
                                     <input
                                         type="email"
-                                        id="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        className={`w-full pl-11 pr-4 py-3 rounded-xl border ${errors.email ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
+                                        id="correo"
+                                        {...register('correo')}
+                                        className={`w-full pl-11 pr-4 py-3 rounded-xl border ${errors.correo ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
                                         placeholder="tu@email.com"
                                     />
                                 </div>
-                                {errors.email && (
+                                {errors.correo && (
                                     <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
                                         <span className="material-icons text-sm">error</span>
-                                        {errors.email}
+                                        {errors.correo.message}
                                     </p>
                                 )}
                             </div>
 
                             {/* Password */}
                             <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label htmlFor="contrasena" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Contraseña
                                 </label>
                                 <div className="relative">
@@ -221,11 +190,9 @@ export default function RegisterPage() {
                                     </span>
                                     <input
                                         type={showPassword ? 'text' : 'password'}
-                                        id="password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        className={`w-full pl-11 pr-12 py-3 rounded-xl border ${errors.password ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
+                                        id="contrasena"
+                                        {...register('contrasena')}
+                                        className={`w-full pl-11 pr-12 py-3 rounded-xl border ${errors.contrasena ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
                                         placeholder="Mínimo 8 caracteres"
                                     />
                                     <button
@@ -239,7 +206,7 @@ export default function RegisterPage() {
                                     </button>
                                 </div>
                                 {/* Password Strength Indicator */}
-                                {formData.password && (
+                                {password && (
                                     <div className="mt-2">
                                         <div className="flex gap-1 mb-1">
                                             {[...Array(4)].map((_, i) => (
@@ -254,10 +221,10 @@ export default function RegisterPage() {
                                         </p>
                                     </div>
                                 )}
-                                {errors.password && (
+                                {errors.contrasena && (
                                     <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
                                         <span className="material-icons text-sm">error</span>
-                                        {errors.password}
+                                        {errors.contrasena.message}
                                     </p>
                                 )}
                             </div>
@@ -274,9 +241,7 @@ export default function RegisterPage() {
                                     <input
                                         type={showConfirmPassword ? 'text' : 'password'}
                                         id="confirmPassword"
-                                        name="confirmPassword"
-                                        value={formData.confirmPassword}
-                                        onChange={handleChange}
+                                        {...register('confirmPassword')}
                                         className={`w-full pl-11 pr-12 py-3 rounded-xl border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
                                         placeholder="Repite tu contraseña"
                                     />
@@ -290,45 +255,10 @@ export default function RegisterPage() {
                                         </span>
                                     </button>
                                 </div>
-                                {formData.confirmPassword && formData.password === formData.confirmPassword && (
-                                    <p className="mt-1 text-sm text-green-500 flex items-center gap-1">
-                                        <span className="material-icons text-sm">check_circle</span>
-                                        Las contraseñas coinciden
-                                    </p>
-                                )}
                                 {errors.confirmPassword && (
                                     <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
                                         <span className="material-icons text-sm">error</span>
-                                        {errors.confirmPassword}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Terms and Conditions */}
-                            <div>
-                                <label className="flex items-start gap-3 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        name="acceptTerms"
-                                        checked={formData.acceptTerms}
-                                        onChange={handleChange}
-                                        className="w-4 h-4 mt-0.5 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-900 cursor-pointer"
-                                    />
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                                        Acepto los{' '}
-                                        <Link to="/terminos" className="text-primary dark:text-white hover:underline font-medium">
-                                            términos y condiciones
-                                        </Link>
-                                        {' '}y la{' '}
-                                        <Link to="/privacidad" className="text-primary dark:text-white hover:underline font-medium">
-                                            política de privacidad
-                                        </Link>
-                                    </span>
-                                </label>
-                                {errors.acceptTerms && (
-                                    <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
-                                        <span className="material-icons text-sm">error</span>
-                                        {errors.acceptTerms}
+                                        {errors.confirmPassword.message}
                                     </p>
                                 )}
                             </div>

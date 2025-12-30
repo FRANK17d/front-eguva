@@ -1,58 +1,41 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { loginSchema } from '../schemas/authSchemas';
+import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
 
 export default function LoginPage() {
-    const [formData, setFormData] = useState({
-        email: '',
-        password: '',
-        rememberMe: false,
-    });
+    const navigate = useNavigate();
+    const { login } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [errors, setErrors] = useState({});
+    const [error, setError] = useState('');
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
-        // Clear error when user types
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
-        }
-    };
+    const {
+        register,
+        handleSubmit,
+        formState: { errors }
+    } = useForm({
+        resolver: zodResolver(loginSchema)
+    });
 
-    const validateForm = () => {
-        const newErrors = {};
-        if (!formData.email) {
-            newErrors.email = 'El correo electrónico es requerido';
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = 'Ingresa un correo electrónico válido';
-        }
-        if (!formData.password) {
-            newErrors.password = 'La contraseña es requerida';
-        }
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!validateForm()) return;
-
+    const onSubmit = async (data) => {
         setIsLoading(true);
-        // Simular llamada a API
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsLoading(false);
+        setError('');
 
-        // TODO: Implementar lógica real de autenticación
-        console.log('Login submitted:', formData);
+        try {
+            await login(data);
+            navigate('/');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Error al iniciar sesión');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleGoogleLogin = () => {
-        // TODO: Implementar autenticación con Google
         console.log('Google login clicked');
     };
 
@@ -60,8 +43,8 @@ export default function LoginPage() {
         <>
             <SEO
                 title="Iniciar Sesión | Eguva"
-                description="Inicia sesión en tu cuenta de Eguva para comprar ropa de segunda mano y acceder a ofertas exclusivas."
-                keywords="iniciar sesion eguva, login eguva, cuenta eguva"
+                description="Inicia sesión en Eguva para acceder a tu cuenta y gestionar tus compras de ropa de segunda mano."
+                keywords="login eguva, iniciar sesión eguva, acceso cuenta eguva"
             />
 
             <section className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark py-20 px-4 relative overflow-hidden">
@@ -82,12 +65,20 @@ export default function LoginPage() {
                                 </h1>
                             </Link>
                             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                                ¡Bienvenido de vuelta!
+                                Bienvenido de nuevo
                             </h2>
                             <p className="text-gray-500 dark:text-gray-400 text-sm">
-                                Inicia sesión para continuar comprando
+                                Inicia sesión para continuar
                             </p>
                         </div>
+
+                        {/* Error Message */}
+                        {error && (
+                            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400">
+                                <span className="material-icons text-sm">error</span>
+                                <span className="text-sm">{error}</span>
+                            </div>
+                        )}
 
                         {/* Google Login Button */}
                         <button
@@ -112,16 +103,16 @@ export default function LoginPage() {
                             </div>
                             <div className="relative flex justify-center text-sm">
                                 <span className="bg-white dark:bg-card-dark px-4 text-gray-400">
-                                    o continúa con tu correo
+                                    o inicia sesión con tu correo
                                 </span>
                             </div>
                         </div>
 
                         {/* Login Form */}
-                        <form onSubmit={handleSubmit} className="space-y-5">
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             {/* Email */}
                             <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label htmlFor="correo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Correo electrónico
                                 </label>
                                 <div className="relative">
@@ -130,25 +121,23 @@ export default function LoginPage() {
                                     </span>
                                     <input
                                         type="email"
-                                        id="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        className={`w-full pl-11 pr-4 py-3 rounded-xl border ${errors.email ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
+                                        id="correo"
+                                        {...register('correo')}
+                                        className={`w-full pl-11 pr-4 py-3 rounded-xl border ${errors.correo ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
                                         placeholder="tu@email.com"
                                     />
                                 </div>
-                                {errors.email && (
+                                {errors.correo && (
                                     <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
                                         <span className="material-icons text-sm">error</span>
-                                        {errors.email}
+                                        {errors.correo.message}
                                     </p>
                                 )}
                             </div>
 
                             {/* Password */}
                             <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <label htmlFor="contrasena" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Contraseña
                                 </label>
                                 <div className="relative">
@@ -157,12 +146,10 @@ export default function LoginPage() {
                                     </span>
                                     <input
                                         type={showPassword ? 'text' : 'password'}
-                                        id="password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        className={`w-full pl-11 pr-12 py-3 rounded-xl border ${errors.password ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
-                                        placeholder="••••••••"
+                                        id="contrasena"
+                                        {...register('contrasena')}
+                                        className={`w-full pl-11 pr-12 py-3 rounded-xl border ${errors.contrasena ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
+                                        placeholder="Tu contraseña"
                                     />
                                     <button
                                         type="button"
@@ -174,28 +161,16 @@ export default function LoginPage() {
                                         </span>
                                     </button>
                                 </div>
-                                {errors.password && (
+                                {errors.contrasena && (
                                     <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
                                         <span className="material-icons text-sm">error</span>
-                                        {errors.password}
+                                        {errors.contrasena.message}
                                     </p>
                                 )}
                             </div>
 
-                            {/* Remember me & Forgot password */}
-                            <div className="flex items-center justify-between">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        name="rememberMe"
-                                        checked={formData.rememberMe}
-                                        onChange={handleChange}
-                                        className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-gray-600 dark:bg-gray-900 cursor-pointer"
-                                    />
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                                        Recordarme
-                                    </span>
-                                </label>
+                            {/* Forgot Password Link */}
+                            <div className="flex justify-end">
                                 <Link
                                     to="/recuperar-contraseña"
                                     className="text-sm font-medium text-primary dark:text-white hover:underline"
@@ -220,21 +195,21 @@ export default function LoginPage() {
                                     </>
                                 ) : (
                                     <>
-                                        <span>Iniciar Sesión</span>
-                                        <span className="material-icons text-xl">arrow_forward</span>
+                                        <span>Iniciar sesión</span>
+                                        <span className="material-icons text-xl">login</span>
                                     </>
                                 )}
                             </button>
                         </form>
 
-                        {/* Sign up link */}
+                        {/* Register link */}
                         <p className="text-center mt-8 text-gray-600 dark:text-gray-400">
                             ¿No tienes cuenta?{' '}
                             <Link
                                 to="/registro"
                                 className="font-bold text-primary dark:text-white hover:underline"
                             >
-                                Regístrate gratis
+                                Regístrate
                             </Link>
                         </p>
                     </div>
