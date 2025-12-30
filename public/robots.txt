@@ -1,0 +1,11 @@
+# Robots.txt for Eguva
+# https://tiendaeguva.netlify.app
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://tiendaeguva.netlify.app/sitemap.xml
+
+# Crawl-delay for politeness
+Crawl-delay: 1
