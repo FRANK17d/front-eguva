@@ -13,18 +13,28 @@ import CartPage from './pages/CartPage';
 import WishlistPage from './pages/WishlistPage';
 import FAQPage from './pages/FAQPage';
 import ShippingPolicyPage from './pages/ShippingPolicyPage';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminCategories from './pages/admin/AdminCategories';
+import AdminCustomers from './pages/admin/AdminCustomers';
+import AdminSettings from './pages/admin/AdminSettings';
 
 // Layout wrapper that conditionally shows Navbar and Footer
 function Layout({ children }) {
   const location = useLocation();
   const authRoutes = ['/iniciar-sesión', '/registro', '/recuperar-contraseña'];
-  const isAuthPage = authRoutes.includes(decodeURIComponent(location.pathname));
+  const decodedPath = decodeURIComponent(location.pathname);
+  const isAuthPage = authRoutes.includes(decodedPath);
+  const isAdminPage = decodedPath.startsWith('/admin');
+  const shouldHideLayout = isAuthPage || isAdminPage;
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-200 font-body transition-colors duration-300">
-      {!isAuthPage && <Navbar />}
+      {!shouldHideLayout && <Navbar />}
       <main>{children}</main>
-      {!isAuthPage && <Footer />}
+      {!shouldHideLayout && <Footer />}
     </div>
   );
 }
@@ -64,6 +74,16 @@ function App() {
           <Route path="/favoritos" element={<WishlistPage />} />
           <Route path="/preguntas-frecuentes" element={<FAQPage />} />
           <Route path="/politicas-de-envio" element={<ShippingPolicyPage />} />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="productos" element={<AdminProducts />} />
+            <Route path="pedidos" element={<AdminOrders />} />
+            <Route path="categorias" element={<AdminCategories />} />
+            <Route path="clientes" element={<AdminCustomers />} />
+            <Route path="configuracion" element={<AdminSettings />} />
+          </Route>
         </Routes>
       </Layout>
     </Router>
