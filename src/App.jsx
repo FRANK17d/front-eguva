@@ -21,6 +21,7 @@ import AdminCategories from './pages/admin/AdminCategories';
 import AdminCustomers from './pages/admin/AdminCustomers';
 import AdminSettings from './pages/admin/AdminSettings';
 import NotFoundPage from './pages/NotFoundPage';
+import GoogleCallbackPage from './pages/GoogleCallbackPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AdminRoute, GuestRoute } from './components/ProtectedRoute';
 
@@ -104,6 +105,9 @@ function App() {
             <Route path="/favoritos" element={<WishlistPage />} />
             <Route path="/preguntas-frecuentes" element={<FAQPage />} />
             <Route path="/politicas-de-envio" element={<ShippingPolicyPage />} />
+
+            {/* Google OAuth Callback */}
+            <Route path="/auth/callback" element={<GoogleCallbackPage />} />
 
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
