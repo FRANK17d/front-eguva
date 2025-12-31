@@ -25,6 +25,7 @@
     --animate-fade-in: fade-in 0.5s ease-out;
     --animate-slide-up: slide-up 0.5s ease-out;
     --animate-pulse-subtle: pulse-subtle 2s ease-in-out infinite;
+    --animate-slide-in-right: slide-in-right 0.3s ease-out;
 }
 
 /* Keyframes */
@@ -73,6 +74,18 @@
 
     50% {
         opacity: 0.8;
+    }
+}
+
+@keyframes slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
     }
 }
 

@@ -25,7 +25,9 @@ import AdminSettings from './pages/admin/AdminSettings';
 import NotFoundPage from './pages/NotFoundPage';
 import GoogleCallbackPage from './pages/GoogleCallbackPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import { AdminRoute, GuestRoute } from './components/ProtectedRoute';
+
 
 // Layout wrapper that conditionally shows Navbar and Footer
 function Layout({ children }) {
@@ -95,44 +97,46 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/productos" element={<ProductsPage />} />
-            <Route path="/producto/:id" element={<ProductDetailPage />} />
-            <Route path="/categorias" element={<CategoriesPage />} />
-            <Route path="/sobre-nosotros" element={<AboutPage />} />
-            <Route path="/iniciar-sesión" element={<GuestRoute><LoginPage /></GuestRoute>} />
-            <Route path="/registro" element={<GuestRoute><RegisterPage /></GuestRoute>} />
-            <Route path="/recuperar-contraseña" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
-            <Route path="/restablecer-contraseña/:token" element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
-            <Route path="/carrito" element={<CartPage />} />
-            <Route path="/favoritos" element={<WishlistPage />} />
-            <Route path="/preguntas-frecuentes" element={<FAQPage />} />
-            <Route path="/politicas-de-envio" element={<ShippingPolicyPage />} />
+    <ToastProvider>
+      <AuthProvider>
+        <Router>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/productos" element={<ProductsPage />} />
+              <Route path="/producto/:id" element={<ProductDetailPage />} />
+              <Route path="/categorias" element={<CategoriesPage />} />
+              <Route path="/sobre-nosotros" element={<AboutPage />} />
+              <Route path="/iniciar-sesión" element={<GuestRoute><LoginPage /></GuestRoute>} />
+              <Route path="/registro" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+              <Route path="/recuperar-contraseña" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+              <Route path="/restablecer-contraseña/:token" element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
+              <Route path="/carrito" element={<CartPage />} />
+              <Route path="/favoritos" element={<WishlistPage />} />
+              <Route path="/preguntas-frecuentes" element={<FAQPage />} />
+              <Route path="/politicas-de-envio" element={<ShippingPolicyPage />} />
 
-            {/* Google OAuth Callback */}
-            <Route path="/auth/callback" element={<GoogleCallbackPage />} />
+              {/* Google OAuth Callback */}
+              <Route path="/auth/callback" element={<GoogleCallbackPage />} />
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="productos" element={<AdminProducts />} />
-              <Route path="pedidos" element={<AdminOrders />} />
-              <Route path="categorias" element={<AdminCategories />} />
-              <Route path="clientes" element={<AdminCustomers />} />
-              <Route path="configuracion" element={<AdminSettings />} />
-            </Route>
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="productos" element={<AdminProducts />} />
+                <Route path="pedidos" element={<AdminOrders />} />
+                <Route path="categorias" element={<AdminCategories />} />
+                <Route path="clientes" element={<AdminCustomers />} />
+                <Route path="configuracion" element={<AdminSettings />} />
+              </Route>
 
-            {/* 404 - Catch all routes */}
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Layout>
-      </Router>
-      <LogoutOverlay />
-    </AuthProvider>
+              {/* 404 - Catch all routes */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Layout>
+        </Router>
+        <LogoutOverlay />
+      </AuthProvider>
+    </ToastProvider>
   );
 }
 

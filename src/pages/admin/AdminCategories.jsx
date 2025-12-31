@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { categoriasAPI } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import SEO from '../../components/SEO';
 
 export default function AdminCategories() {
+    const toast = useToast();
     const [categorias, setCategorias] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -74,15 +76,17 @@ export default function AdminCategories() {
         try {
             if (editingCategory) {
                 await categoriasAPI.update(editingCategory.id, formData);
+                toast.success('Categoría actualizada correctamente');
             } else {
                 await categoriasAPI.create(formData);
+                toast.success('Categoría creada correctamente');
             }
 
             setShowModal(false);
             fetchCategorias();
         } catch (err) {
             console.error('Error al guardar:', err);
-            alert(err.response?.data?.message || 'Error al guardar la categoría');
+            toast.error(err.response?.data?.message || 'Error al guardar la categoría');
         } finally {
             setSaving(false);
         }
@@ -90,14 +94,23 @@ export default function AdminCategories() {
 
     // Eliminar categoría
     const handleDelete = async (id) => {
-        if (!confirm('¿Estás seguro de eliminar esta categoría?')) return;
+        const confirmed = await toast.confirm({
+            title: '¿Eliminar categoría?',
+            message: 'Esta acción no se puede deshacer. La categoría será eliminada permanentemente.',
+            confirmText: 'Sí, eliminar',
+            cancelText: 'Cancelar',
+            type: 'danger'
+        });
+
+        if (!confirmed) return;
 
         try {
             await categoriasAPI.delete(id);
+            toast.success('Categoría eliminada correctamente');
             fetchCategorias();
         } catch (err) {
             console.error('Error al eliminar:', err);
-            alert(err.response?.data?.message || 'Error al eliminar la categoría');
+            toast.error(err.response?.data?.message || 'Error al eliminar la categoría');
         }
     };
 

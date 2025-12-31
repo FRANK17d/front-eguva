@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { productosAPI, categoriasAPI } from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import SEO from '../../components/SEO';
 
 export default function AdminProducts() {
+    const toast = useToast();
     const [productos, setProductos] = useState([]);
     const [categorias, setCategorias] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -145,15 +147,17 @@ export default function AdminProducts() {
 
             if (editingProduct) {
                 await productosAPI.update(editingProduct.id, data);
+                toast.success('Producto actualizado correctamente');
             } else {
                 await productosAPI.create(data);
+                toast.success('Producto creado correctamente');
             }
 
             setShowModal(false);
             fetchProductos();
         } catch (err) {
             console.error('Error al guardar:', err);
-            alert(err.response?.data?.message || 'Error al guardar el producto');
+            toast.error(err.response?.data?.message || 'Error al guardar el producto');
         } finally {
             setSaving(false);
         }
@@ -161,14 +165,23 @@ export default function AdminProducts() {
 
     // Eliminar producto
     const handleDelete = async (id) => {
-        if (!confirm('¿Estás seguro de eliminar este producto?')) return;
+        const confirmed = await toast.confirm({
+            title: '¿Eliminar producto?',
+            message: 'Esta acción no se puede deshacer. El producto será eliminado permanentemente.',
+            confirmText: 'Sí, eliminar',
+            cancelText: 'Cancelar',
+            type: 'danger'
+        });
+
+        if (!confirmed) return;
 
         try {
             await productosAPI.delete(id);
+            toast.success('Producto eliminado correctamente');
             fetchProductos();
         } catch (err) {
             console.error('Error al eliminar:', err);
-            alert('Error al eliminar el producto');
+            toast.error('Error al eliminar el producto');
         }
     };
 
