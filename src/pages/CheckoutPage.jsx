@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -12,17 +12,21 @@ export default function CheckoutPage() {
     const navigate = useNavigate();
     const toast = useToast();
 
+    // Estados del flujo
+    const [step, setStep] = useState(1); // 1: Envío, 2: Pago
+    const [loading, setLoading] = useState(false);
+    const [orderId, setOrderId] = useState(null);
+    const [paymentType, setPaymentType] = useState('card');
+    const [yapeForm, setYapeForm] = useState({ phoneNumber: '', otp: '' });
+    const [processingYape, setProcessingYape] = useState(false);
+
+    // Formulario de envío
     const [form, setForm] = useState({
         direccionEnvio: '',
         ciudad: 'Lima',
         telefono: '',
-        notas: '',
-        metodoPago: 'MercadoPago'
+        notas: ''
     });
-
-    const [loading, setLoading] = useState(false);
-    const [orderId, setOrderId] = useState(null);
-    const [showPaymentBrick, setShowPaymentBrick] = useState(false);
 
     const subtotal = cartTotal;
     const total = subtotal + shippingCost;
@@ -31,354 +35,463 @@ export default function CheckoutPage() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
-    // Función para inicializar el Brick de Pago de Mercado Pago
+    // Inicializar Payment Brick
     const initPaymentBrick = useCallback(async (orderId) => {
         const publicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
         if (!publicKey) {
-            toast.error('Error de configuración: Public Key de Mercado Pago no encontrada');
+            toast.error('Error de configuración de pago');
             setLoading(false);
             return;
         }
 
-        const mp = new window.MercadoPago(publicKey, {
-            locale: 'es-PE'
-        });
+        // Detectar si está en modo oscuro
+        const isDark = document.documentElement.classList.contains('dark');
+
+        const mp = new window.MercadoPago(publicKey, { locale: 'es-PE' });
         const bricksBuilder = mp.bricks();
 
-        const renderPaymentBrick = async (bricksBuilder) => {
-            const settings = {
-                initialization: {
-                    amount: total,
-                    payer: {
-                        email: user.correo,
-                        entityType: 'individual',
+        const settings = {
+            initialization: {
+                amount: total,
+                payer: { email: user.correo, entityType: 'individual' },
+            },
+            customization: {
+                visual: {
+                    style: {
+                        theme: isDark ? 'dark' : 'default',
+                        customVariables: isDark ? {
+                            textPrimaryColor: '#ffffff',
+                            textSecondaryColor: '#a0a0a0',
+                            inputBackgroundColor: '#1f1f3d',
+                            formBackgroundColor: 'transparent'
+                        } : {
+                            formBackgroundColor: 'transparent'
+                        }
                     },
+                    hideFormTitle: true
                 },
-                customization: {
-                    paymentMethods: {
-                        ticket: ["all"],
-                        bankTransfer: ["all"],
-                        creditCard: "all",
-                        debitCard: "all",
-                        mercadoPago: "all",
-                    },
+                paymentMethods: {
+                    creditCard: 'all',
+                    debitCard: 'all',
                 },
-                callbacks: {
-                    onReady: () => {
-                        setLoading(false);
-                    },
-                    onSubmit: ({ selectedPaymentMethod, formData }) => {
-                        return new Promise((resolve, reject) => {
-                            const paymentData = {
-                                payment: formData,
-                                pedidoId: orderId
-                            };
-
-                            pagosAPI.procesarPago(paymentData)
-                                .then((res) => {
-                                    if (res.data.status === 'approved') {
-                                        clearCart();
-                                        navigate('/pago/exitoso?status=approved');
-                                        resolve();
-                                    } else if (res.data.status === 'in_process') {
-                                        clearCart();
-                                        navigate('/pago/pendiente?status=pending');
-                                        resolve();
-                                    } else {
-                                        toast.error(res.data.mensaje || 'Pago rechazado. Intenta con otro medio.');
-                                        reject();
-                                    }
-                                })
-                                .catch((error) => {
-                                    console.error('Error al procesar pago:', error);
-                                    const errorMsg = error.response?.data?.detalles || error.response?.data?.mensaje || 'Error al procesar el pago';
-                                    toast.error(errorMsg);
-                                    reject();
-                                });
+            },
+            callbacks: {
+                onReady: () => setLoading(false),
+                onSubmit: ({ formData }) => {
+                    return pagosAPI.procesarPago({ payment: formData, pedidoId: orderId })
+                        .then((res) => {
+                            if (res.data.status === 'approved') {
+                                clearCart();
+                                navigate('/pago/exitoso?status=approved');
+                            } else if (res.data.status === 'in_process') {
+                                clearCart();
+                                navigate('/pago/pendiente?status=pending');
+                            } else {
+                                toast.error(res.data.mensaje || 'Pago rechazado');
+                            }
+                        })
+                        .catch((error) => {
+                            toast.error(error.response?.data?.detalles || 'Error al procesar');
                         });
-                    },
-                    onError: (error) => {
-                        console.error('Error en Brick:', error);
-                        toast.error('Error al cargar la pasarela de pago');
-                    },
                 },
-            };
-
-            // Esperar un breve momento para asegurar que el DOM se ha actualizado
-            const checkContainer = () => {
-                const container = document.getElementById('paymentBrick_container');
-                if (container) {
-                    bricksBuilder.create(
-                        'payment',
-                        'paymentBrick_container',
-                        settings
-                    ).then(controller => {
-                        window.paymentBrickController = controller;
-                    }).catch(error => {
-                        console.error('Error al crear Brick:', error);
-                    });
-                } else {
-                    setTimeout(checkContainer, 100);
-                }
-            };
-
-            checkContainer();
+                onError: () => toast.error('Error en la pasarela de pago'),
+            },
         };
 
-        renderPaymentBrick(bricksBuilder);
+        const checkContainer = () => {
+            const container = document.getElementById('paymentBrick_container');
+            if (container) {
+                bricksBuilder.create('payment', 'paymentBrick_container', settings)
+                    .then(controller => { window.paymentBrickController = controller; })
+                    .catch(console.error);
+            } else {
+                setTimeout(checkContainer, 100);
+            }
+        };
+        checkContainer();
     }, [total, user.correo, clearCart, navigate, toast]);
 
-    // Manejar el envío del formulario (Creación de Pedido)
+    // Procesar pago con Yape
+    const handleYapePayment = async () => {
+        if (!yapeForm.phoneNumber || yapeForm.otp.length !== 6) {
+            toast.error('Ingresa tu número y código OTP');
+            return;
+        }
+
+        setProcessingYape(true);
+        try {
+            const mp = new window.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY, { locale: 'es-PE' });
+            const yape = mp.yape({ otp: yapeForm.otp, phoneNumber: yapeForm.phoneNumber });
+            const yapeToken = await yape.create();
+
+            if (!yapeToken?.id) {
+                toast.error('Error al validar Yape. Verifica tus datos.');
+                return;
+            }
+
+            const res = await pagosAPI.procesarPago({
+                payment: {
+                    token: yapeToken.id,
+                    transaction_amount: total,
+                    installments: 1,
+                    payment_method_id: 'yape',
+                    payer: { email: user.correo }
+                },
+                pedidoId: orderId
+            });
+
+            if (res.data.status === 'approved') {
+                clearCart();
+                navigate('/pago/exitoso?status=approved');
+            } else {
+                toast.error(res.data.mensaje || 'Pago rechazado');
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.detalles || 'Error con Yape');
+        } finally {
+            setProcessingYape(false);
+        }
+    };
+
+    // Crear pedido y pasar al paso 2
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
             const pedidoData = {
-                items: cartItems.map(item => ({
-                    productoId: item.id,
-                    cantidad: item.quantity
-                })),
+                items: cartItems.map(item => ({ productoId: item.id, cantidad: item.quantity })),
+                metodoPago: 'MercadoPago',
                 ...form
             };
 
             const response = await pedidosAPI.crear(pedidoData);
-            const newOrderId = response.data.id;
-            setOrderId(newOrderId);
-
-            if (form.metodoPago === 'MercadoPago') {
-                setShowPaymentBrick(true);
-                // La inicialización del brick se hace en un useEffect que mira showPaymentBrick
-            } else {
-                clearCart();
-                navigate(`/perfil/pedidos/${newOrderId}`);
-                toast.info('Pedido registrado. Por favor completa la transferencia bancaria.');
-            }
+            setOrderId(response.data.id);
+            setStep(2);
         } catch (error) {
-            console.error('Error al crear pedido:', error);
-            toast.error(error.response?.data?.mensaje || 'Error al procesar el pedido');
+            toast.error(error.response?.data?.mensaje || 'Error al crear pedido');
             setLoading(false);
         }
     };
 
+    // Inicializar Brick cuando estamos en paso 2 y paymentType es card
     useEffect(() => {
-        if (showPaymentBrick && orderId) {
-            // Dar tiempo a React para renderizar el contenedor antes de inicializar MP
-            const timer = setTimeout(() => {
-                initPaymentBrick(orderId);
-            }, 300);
-            return () => clearTimeout(timer);
+        if (step === 2 && orderId && paymentType === 'card') {
+            const timer = setTimeout(() => initPaymentBrick(orderId), 400);
+            return () => {
+                clearTimeout(timer);
+                // Destruir el Brick al cambiar de método
+                if (window.paymentBrickController) {
+                    try {
+                        window.paymentBrickController.unmount();
+                    } catch (e) { /* ignore */ }
+                    window.paymentBrickController = null;
+                }
+            };
         }
-    }, [showPaymentBrick, orderId, initPaymentBrick]);
+    }, [step, orderId, paymentType, initPaymentBrick]);
 
-    if (cartItems.length === 0 && !showPaymentBrick) {
+    // Redirigir si no hay items
+    if (cartItems.length === 0 && step === 1) {
         navigate('/carrito');
         return null;
     }
 
     return (
         <>
-            <SEO title="Finalizar Compra | Eguva" description="Completa tu pedido y recíbelo en la puerta de tu casa." />
+            <SEO title="Checkout | Eguva" description="Finaliza tu compra de forma segura" />
 
-            <section className="pt-32 pb-20 bg-background-light dark:bg-background-dark min-h-screen">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
+            <section className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-black dark:to-gray-900 pt-24 pb-12">
+                <div className="max-w-6xl mx-auto px-4">
 
-                        {/* Formulario / Pasarela */}
-                        <div className="lg:col-span-3">
-                            {!showPaymentBrick ? (
-                                <>
-                                    <h1 className="font-display text-3xl font-bold uppercase text-primary dark:text-white mb-8">
-                                        Detalles de Entrega
-                                    </h1>
+                    {/* Header con progreso */}
+                    <div className="mb-8">
+                        <Link to="/carrito" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-primary mb-4 transition-colors">
+                            <span className="material-icons text-lg">arrow_back</span>
+                            Volver al carrito
+                        </Link>
+                        <h1 className="text-3xl md:text-4xl font-display font-bold text-primary dark:text-white">
+                            {step === 1 ? 'Datos de Envío' : 'Método de Pago'}
+                        </h1>
 
-                                    <form onSubmit={handleSubmit} className="space-y-6">
-                                        <div className="bg-white dark:bg-card-dark rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Nombre Completo</label>
-                                                    <input
-                                                        type="text"
-                                                        defaultValue={user?.nombre}
-                                                        readOnly
-                                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white opacity-70"
-                                                    />
-                                                </div>
+                        {/* Indicador de pasos */}
+                        <div className="flex items-center gap-4 mt-6">
+                            <div className={`flex items-center gap-2 ${step >= 1 ? 'text-primary dark:text-white' : 'text-gray-400'}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= 1 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-800'}`}>1</div>
+                                <span className="text-sm font-medium hidden sm:block">Envío</span>
+                            </div>
+                            <div className={`flex-1 h-0.5 ${step >= 2 ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-800'}`}></div>
+                            <div className={`flex items-center gap-2 ${step >= 2 ? 'text-primary dark:text-white' : 'text-gray-400'}`}>
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step >= 2 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-gray-800'}`}>2</div>
+                                <span className="text-sm font-medium hidden sm:block">Pago</span>
+                            </div>
+                        </div>
+                    </div>
 
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Dirección de Envío *</label>
-                                                    <input
-                                                        required
-                                                        name="direccionEnvio"
-                                                        value={form.direccionEnvio}
-                                                        onChange={handleChange}
-                                                        placeholder="Ej. Av. Larco 123, Int 402"
-                                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white"
-                                                    />
-                                                </div>
 
-                                                <div>
-                                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Ciudad / Distrito *</label>
-                                                    <select
-                                                        name="ciudad"
-                                                        value={form.ciudad}
-                                                        onChange={handleChange}
-                                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white"
-                                                    >
-                                                        <option value="Lima">Lima Metropolitana</option>
-                                                        <option value="Callao">Callao</option>
-                                                        <option value="Provincia">Otras Provincias</option>
-                                                    </select>
-                                                </div>
+                    <div className="grid lg:grid-cols-3 gap-8">
 
-                                                <div>
-                                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Teléfono de Contacto *</label>
-                                                    <input
-                                                        required
-                                                        type="tel"
-                                                        name="telefono"
-                                                        value={form.telefono}
-                                                        onChange={handleChange}
-                                                        placeholder="999 999 999"
-                                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white"
-                                                    />
-                                                </div>
+                        {/* Panel Principal - Formulario */}
+                        <div className="lg:col-span-2 order-2 lg:order-1">
+                            <div className="bg-white/80 dark:bg-white/5 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-xl border border-white/20 dark:border-white/10">
 
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Referencia o Notas (Opcional)</label>
-                                                    <textarea
-                                                        name="notas"
-                                                        value={form.notas}
-                                                        onChange={handleChange}
-                                                        rows="2"
-                                                        placeholder="Ej. Tocar el timbre rojo, frente al parque..."
-                                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary outline-none transition-all dark:text-white resize-none"
-                                                    ></textarea>
-                                                </div>
+                                {step === 1 ? (
+                                    /* PASO 1: Formulario de Envío */
+                                    <form onSubmit={handleSubmit} className="space-y-5">
+                                        <div className="grid md:grid-cols-2 gap-5">
+                                            <div className="md:col-span-2">
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                                    <span className="material-icons text-sm align-middle mr-1">person</span>
+                                                    Nombre
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={user?.nombre || ''}
+                                                    readOnly
+                                                    className="w-full px-4 py-3.5 bg-gray-100 dark:bg-gray-900/50 rounded-xl text-gray-600 dark:text-gray-400 cursor-not-allowed"
+                                                />
                                             </div>
-                                        </div>
 
-                                        <h2 className="font-display text-2xl font-bold uppercase text-primary dark:text-white pt-4">
-                                            Método de Pago
-                                        </h2>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <label className={`relative flex items-center p-4 cursor-pointer rounded-2xl border-2 transition-all ${form.metodoPago === 'MercadoPago' ? 'border-primary bg-primary/5' : 'border-gray-100 dark:border-gray-800 bg-white dark:bg-card-dark'}`}>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                                    <span className="material-icons text-sm align-middle mr-1">home</span>
+                                                    Dirección de Envío *
+                                                </label>
                                                 <input
-                                                    type="radio"
-                                                    name="metodoPago"
-                                                    value="MercadoPago"
-                                                    checked={form.metodoPago === 'MercadoPago'}
+                                                    required
+                                                    name="direccionEnvio"
+                                                    value={form.direccionEnvio}
                                                     onChange={handleChange}
-                                                    className="hidden"
+                                                    placeholder="Av. Ejemplo 123, Dpto 4B"
+                                                    className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all dark:text-white"
                                                 />
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${form.metodoPago === 'MercadoPago' ? 'border-primary' : 'border-gray-300'}`}>
-                                                        {form.metodoPago === 'MercadoPago' && <div className="w-2.5 h-2.5 bg-primary rounded-full"></div>}
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-bold text-gray-900 dark:text-white text-sm">Pago Online (Tarjeta/Yape)</p>
-                                                        <p className="text-[10px] text-gray-400">Procesado por Mercado Pago</p>
-                                                    </div>
-                                                </div>
-                                            </label>
+                                            </div>
 
-                                            <label className={`relative flex items-center p-4 cursor-pointer rounded-2xl border-2 transition-all ${form.metodoPago === 'Transferencia' ? 'border-primary bg-primary/5' : 'border-gray-100 dark:border-gray-800 bg-white dark:bg-card-dark'}`}>
-                                                <input
-                                                    type="radio"
-                                                    name="metodoPago"
-                                                    value="Transferencia"
-                                                    checked={form.metodoPago === 'Transferencia'}
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                                    <span className="material-icons text-sm align-middle mr-1">location_city</span>
+                                                    Ciudad
+                                                </label>
+                                                <select
+                                                    name="ciudad"
+                                                    value={form.ciudad}
                                                     onChange={handleChange}
-                                                    className="hidden"
+                                                    className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none dark:text-white cursor-pointer"
+                                                >
+                                                    <option value="Lima">Lima Metropolitana</option>
+                                                    <option value="Callao">Callao</option>
+                                                    <option value="Provincia">Otras Provincias</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                                    <span className="material-icons text-sm align-middle mr-1">phone</span>
+                                                    Teléfono *
+                                                </label>
+                                                <input
+                                                    required
+                                                    type="tel"
+                                                    name="telefono"
+                                                    value={form.telefono}
+                                                    onChange={handleChange}
+                                                    placeholder="999 999 999"
+                                                    className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none dark:text-white"
                                                 />
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${form.metodoPago === 'Transferencia' ? 'border-primary' : 'border-gray-300'}`}>
-                                                        {form.metodoPago === 'Transferencia' && <div className="w-2.5 h-2.5 bg-primary rounded-full"></div>}
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-bold text-gray-900 dark:text-white text-sm">Transferencia Directa</p>
-                                                        <p className="text-[10px] text-gray-400">Bancaria o Yape directo</p>
-                                                    </div>
-                                                </div>
-                                            </label>
+                                            </div>
+
+                                            <div className="md:col-span-2">
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                                    <span className="material-icons text-sm align-middle mr-1">notes</span>
+                                                    Notas (opcional)
+                                                </label>
+                                                <textarea
+                                                    name="notas"
+                                                    value={form.notas}
+                                                    onChange={handleChange}
+                                                    rows="2"
+                                                    placeholder="Instrucciones especiales de entrega..."
+                                                    className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none dark:text-white resize-none"
+                                                />
+                                            </div>
                                         </div>
 
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="w-full py-5 bg-primary dark:bg-white text-white dark:text-primary font-bold rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg disabled:opacity-50"
+                                            className="w-full py-4 mt-4 bg-gradient-to-r from-primary to-primary/80 dark:from-white dark:to-gray-200 text-white dark:text-primary font-bold text-lg rounded-2xl hover:shadow-lg hover:shadow-primary/25 transition-all flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer"
                                         >
-                                            {loading ? 'Procesando...' : `Confirmar y Pagar S/${total.toFixed(2)}`}
+                                            {loading ? (
+                                                <span className="animate-spin material-icons">refresh</span>
+                                            ) : (
+                                                <>
+                                                    Continuar al Pago
+                                                    <span className="material-icons">arrow_forward</span>
+                                                </>
+                                            )}
                                         </button>
                                     </form>
-                                </>
-                            ) : (
-                                <div className="bg-white dark:bg-card-dark rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 animate-fade-in">
-                                    <h2 className="text-2xl font-bold text-primary dark:text-white mb-6">Completa tu pago</h2>
-                                    <div id="paymentBrick_container"></div>
-                                    <button
-                                        onClick={() => setShowPaymentBrick(false)}
-                                        className="mt-6 text-sm text-gray-500 hover:text-primary transition-colors flex items-center gap-2"
-                                    >
-                                        <span className="material-icons text-sm">arrow_back</span>
-                                        Cambiar datos de entrega
-                                    </button>
-                                </div>
-                            )}
+                                ) : (
+                                    /* PASO 2: Métodos de Pago */
+                                    <div className="space-y-6">
+                                        {/* Selector Tarjeta / Yape */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setPaymentType('card')}
+                                                className={`relative p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center gap-2 ${paymentType === 'card'
+                                                    ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                                                    : 'border-gray-200 dark:border-gray-800 hover:border-gray-300'
+                                                    }`}
+                                            >
+                                                {paymentType === 'card' && (
+                                                    <span className="absolute top-2 right-2 material-icons text-primary text-lg">check_circle</span>
+                                                )}
+                                                <span className="material-icons text-3xl text-gray-700 dark:text-gray-300">credit_card</span>
+                                                <span className="font-bold text-sm text-gray-900 dark:text-white">Tarjeta</span>
+                                                <span className="text-[10px] text-gray-500">Crédito o Débito</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setPaymentType('yape')}
+                                                className={`relative p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center gap-2 ${paymentType === 'yape'
+                                                    ? 'border-[#742284] bg-[#742284]/5 dark:bg-[#742284]/10'
+                                                    : 'border-gray-200 dark:border-gray-800 hover:border-gray-300'
+                                                    }`}
+                                            >
+                                                {paymentType === 'yape' && (
+                                                    <span className="absolute top-2 right-2 material-icons text-[#742284] text-lg">check_circle</span>
+                                                )}
+                                                <img src="/yape-logo.png" alt="Yape" className="w-10 h-10 rounded-xl" />
+                                                <span className="font-bold text-sm text-gray-900 dark:text-white">Yape</span>
+                                                <span className="text-[10px] text-gray-500">Pago rápido</span>
+                                            </button>
+                                        </div>
+
+                                        {/* Contenido según método */}
+                                        {paymentType === 'card' ? (
+                                            <div className="min-h-[300px]" key={`brick-wrapper-${orderId}`}>
+                                                <div id="paymentBrick_container" key={`brick-${orderId}`}></div>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-4" key="yape-form">
+                                                <p className="text-sm text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 p-3 rounded-xl">
+                                                    Ve a tu Yape, entra en "Aprobar compras" y copia el código de aprobación.
+                                                </p>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Número de Celular</label>
+                                                    <input
+                                                        type="tel"
+                                                        value={yapeForm.phoneNumber}
+                                                        onChange={(e) => setYapeForm({ ...yapeForm, phoneNumber: e.target.value.replace(/\D/g, '').slice(0, 9) })}
+                                                        placeholder="999 999 999"
+                                                        className="w-full px-4 py-4 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl text-xl tracking-widest focus:ring-2 focus:ring-[#742284]/50 outline-none dark:text-white"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Código de Aprobación</label>
+                                                    <input
+                                                        type="text"
+                                                        value={yapeForm.otp}
+                                                        onChange={(e) => setYapeForm({ ...yapeForm, otp: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                                                        placeholder="• • • • • •"
+                                                        className="w-full px-4 py-4 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl text-3xl tracking-[0.5em] text-center font-mono focus:ring-2 focus:ring-[#742284]/50 outline-none dark:text-white"
+                                                    />
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={handleYapePayment}
+                                                    disabled={processingYape || yapeForm.otp.length !== 6 || yapeForm.phoneNumber.length !== 9}
+                                                    className="w-full py-4 bg-gradient-to-r from-[#742284] to-purple-600 text-white font-bold text-lg rounded-2xl hover:shadow-lg hover:shadow-purple-500/25 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                                >
+                                                    {processingYape ? (
+                                                        <>
+                                                            <span className="animate-spin material-icons">refresh</span>
+                                                            Procesando...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span className="material-icons">check_circle</span>
+                                                            Pagar S/{total.toFixed(2)}
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Botón volver */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setStep(1)}
+                                            className="flex items-center gap-2 text-sm text-gray-500 hover:text-primary transition-colors cursor-pointer"
+                                        >
+                                            <span className="material-icons text-lg">arrow_back</span>
+                                            Editar datos de envío
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Resumen Final */}
-                        <div className="lg:col-span-2">
-                            <div className="bg-white dark:bg-card-dark rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-800 sticky top-32">
-                                <h2 className="text-xl font-bold text-primary dark:text-white mb-6">Resumen de Compra</h2>
+                        {/* Panel Resumen */}
+                        <div className="lg:col-span-1 order-1 lg:order-2">
+                            <div className="bg-white/80 dark:bg-white/5 backdrop-blur-xl rounded-3xl p-6 shadow-xl border border-white/20 dark:border-white/10 sticky top-24">
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <span className="material-icons text-primary">shopping_bag</span>
+                                    Tu pedido
+                                </h3>
 
-                                <div className="max-h-60 overflow-y-auto mb-6 pr-2 space-y-4">
+                                {/* Lista de productos */}
+                                <div className="space-y-3 max-h-48 overflow-y-auto mb-4">
                                     {cartItems.map(item => (
-                                        <div key={item.id} className="flex gap-4">
-                                            <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-50">
+                                        <div key={item.id} className="flex gap-3 items-center">
+                                            <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
                                                 <img src={item.imagen} alt={item.nombre} className="w-full h-full object-cover" />
                                             </div>
-                                            <div className="flex-grow min-w-0">
-                                                <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">{item.nombre}</h4>
-                                                <p className="text-xs text-gray-500">Cant: {item.quantity}</p>
-                                                <p className="text-sm font-bold text-primary dark:text-white mt-1">S/{(item.precio * item.quantity).toFixed(2)}</p>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.nombre}</p>
+                                                <p className="text-xs text-gray-500">x{item.quantity}</p>
                                             </div>
+                                            <p className="text-sm font-bold text-gray-900 dark:text-white">S/{(item.precio * item.quantity).toFixed(2)}</p>
                                         </div>
                                     ))}
                                 </div>
 
-                                <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800 mb-8">
-                                    <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                                <div className="border-t border-gray-200 dark:border-gray-800 pt-4 space-y-2">
+                                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                                         <span>Subtotal</span>
                                         <span>S/{subtotal.toFixed(2)}</span>
                                     </div>
-                                    <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                                         <span>Envío</span>
                                         {isFreeShipping ? (
-                                            <span className="text-green-600 font-bold uppercase text-xs">Gratis</span>
+                                            <span className="text-green-500 font-bold">GRATIS</span>
                                         ) : (
                                             <span>S/{shippingCost.toFixed(2)}</span>
                                         )}
                                     </div>
-                                    <div className="h-px bg-gray-100 dark:bg-gray-800 w-full my-2" />
-                                    <div className="flex justify-between text-2xl font-bold text-primary dark:text-white">
+                                    <div className="flex justify-between text-xl font-bold text-primary dark:text-white pt-2 border-t border-gray-200 dark:border-gray-800">
                                         <span>Total</span>
                                         <span>S/{total.toFixed(2)}</span>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl">
-                                    <span className="material-icons text-green-500">verified_user</span>
-                                    <p className="text-[10px] text-gray-500 leading-tight">
-                                        Pago 100% seguro. Tus datos están protegidos con encriptación de grado bancario.
-                                    </p>
+                                {/* Badge de seguridad */}
+                                <div className="mt-6 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl flex items-center gap-3">
+                                    <span className="material-icons text-green-500 text-2xl">lock</span>
+                                    <div>
+                                        <p className="text-xs font-bold text-green-700 dark:text-green-400">Pago 100% Seguro</p>
+                                        <p className="text-[10px] text-green-600 dark:text-green-500">Encriptación SSL</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
+            </section >
         </>
     );
 }

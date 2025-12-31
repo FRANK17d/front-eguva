@@ -267,3 +267,50 @@ input:focus-visible {
 .dark input:focus-visible {
     outline-color: white;
 }
+
+/* Mercado Pago Payment Brick - Complete styling */
+#paymentBrick_container {
+    --mp-border-radius: 12px;
+}
+
+/* Inputs y selects */
+#paymentBrick_container input,
+#paymentBrick_container select {
+    border-radius: 12px !important;
+}
+
+/* Cards/opciones de pago */
+#paymentBrick_container [class*="option"],
+#paymentBrick_container [class*="card"],
+#paymentBrick_container [class*="payment-method"] {
+    border-radius: 16px !important;
+}
+
+/* Contenedor principal */
+#paymentBrick_container>div {
+    border-radius: 16px !important;
+}
+
+/* Botón - Modo claro */
+#paymentBrick_container button[type="submit"],
+#paymentBrick_container .mp-button {
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    background: linear-gradient(135deg, #1a1a1a 0%, #333 100%) !important;
+    color: white !important;
+}
+
+/* Botón - Modo oscuro */
+.dark #paymentBrick_container button[type="submit"],
+.dark #paymentBrick_container .mp-button {
+    background: linear-gradient(135deg, #ffffff 0%, #e5e5e5 100%) !important;
+    color: #1a1a1a !important;
+}
+
+/* Inputs en modo oscuro */
+.dark #paymentBrick_container input,
+.dark #paymentBrick_container select {
+    background-color: rgba(30, 30, 50, 0.5) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+}
