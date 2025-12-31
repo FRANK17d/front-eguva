@@ -17,7 +17,7 @@ const conditionStyles = {
 export default function ProductDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { addToCart } = useCart();
+    const { addToCart, cartItems } = useCart();
     const { toggleWishlist, isInWishlist } = useWishlist();
     const { isAuthenticated } = useAuth();
     const toast = useToast();
@@ -50,10 +50,12 @@ export default function ProductDetailPage() {
     }, [id]);
 
     const handleAddToCart = () => {
-        addToCart(product, quantity);
-        setAddedToCart(true);
-        toast.success(`${product.nombre} añadido al carrito`);
-        setTimeout(() => setAddedToCart(false), 2000);
+        const success = addToCart(product, quantity);
+        if (success) {
+            setAddedToCart(true);
+            toast.success(`${product.nombre} añadido al carrito`);
+            setTimeout(() => setAddedToCart(false), 2000);
+        }
     };
 
     const handleAddToWishlist = () => {
@@ -64,7 +66,9 @@ export default function ProductDetailPage() {
     };
 
     const handleBuyNow = () => {
-        addToCart(product, quantity);
+        const success = addToCart(product, quantity);
+        if (!success) return;
+
         if (!isAuthenticated) {
             toast.info('Para continuar con la compra, primero debes iniciar sesión.');
             navigate('/iniciar-sesión', { state: { from: '/carrito' } });

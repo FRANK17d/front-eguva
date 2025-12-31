@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { configAPI } from '../services/api';
+import { useToast } from './ToastContext';
 
 const CartContext = createContext();
 
@@ -12,6 +13,7 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
+    const toast = useToast();
     const [cartItems, setCartItems] = useState(() => {
         const localData = localStorage.getItem('eguva_cart');
         return localData ? JSON.parse(localData) : [];
@@ -42,21 +44,38 @@ export const CartProvider = ({ children }) => {
     }, [cartItems]);
 
     const addToCart = (product, quantity = 1) => {
+        const existingItem = cartItems.find(item => item.id === product.id);
+        const currentQuantity = existingItem ? existingItem.quantity : 0;
+        const newTotalQuantity = currentQuantity + quantity;
+
+        // Validar contra el stock real del producto ANTES de actualizar estado
+        if (newTotalQuantity > product.stock) {
+            toast.info(`Solo quedan ${product.stock} unidades de este producto.`);
+            return false;
+        }
+
         setCartItems(prev => {
-            const existingItem = prev.find(item => item.id === product.id);
             if (existingItem) {
                 return prev.map(item =>
                     item.id === product.id
-                        ? { ...item, quantity: item.quantity + quantity }
+                        ? { ...item, quantity: newTotalQuantity }
                         : item
                 );
             }
             return [...prev, { ...product, quantity }];
         });
+        return true;
     };
 
     const updateQuantity = (id, quantity) => {
         if (quantity < 1) return;
+
+        const item = cartItems.find(i => i.id === id);
+        if (item && quantity > item.stock) {
+            toast.info(`Solo quedan ${item.stock} unidades de este producto.`);
+            return;
+        }
+
         setCartItems(prev =>
             prev.map(item => item.id === id ? { ...item, quantity } : item)
         );

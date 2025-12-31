@@ -22,8 +22,10 @@ function ProductCard({ product }) {
     const handleAddToCart = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        addToCart(product);
-        toast.success(`${product.nombre} añadido al carrito`);
+        const success = addToCart(product);
+        if (success) {
+            toast.success(`${product.nombre} añadido al carrito`);
+        }
     };
 
     return (

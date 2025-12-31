@@ -25,8 +25,10 @@ function ProductCard({ product }) {
     const handleAddToCart = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        addToCart(product);
-        toast.success(`${product.nombre} añadido al carrito`);
+        const success = addToCart(product);
+        if (success) {
+            toast.success(`${product.nombre} añadido al carrito`);
+        }
     };
 
     const handleWishlist = (e) => {
@@ -79,8 +81,8 @@ function ProductCard({ product }) {
                         <button
                             onClick={handleWishlist}
                             className={`p-2 rounded-lg shadow-lg active:scale-95 transition-all cursor-pointer ${isInWishlist(product.id)
-                                    ? 'bg-red-50 text-red-500'
-                                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                ? 'bg-red-50 text-red-500'
+                                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                 }`}
                             title={isInWishlist(product.id) ? "Quitar de favoritos" : "Añadir a favoritos"}
                         >
