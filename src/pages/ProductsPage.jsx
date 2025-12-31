@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { productosAPI, categoriasAPI } from '../services/api';
 import SEO from '../components/SEO';
 
@@ -105,18 +105,25 @@ export default function ProductsPage() {
     const [sortBy, setSortBy] = useState('recientes');
     const [total, setTotal] = useState(0);
 
-    // Cargar categorías
+    const location = useLocation();
+
+    // Cargar categorías y setear categoría activa de la URL
     useEffect(() => {
         const fetchCategorias = async () => {
             try {
                 const response = await categoriasAPI.getAll();
                 setCategorias(response.data);
+
+                // Obtener ID de categoría de la URL o limpiar si no existe
+                const params = new URLSearchParams(location.search);
+                const queryCat = params.get('categoria');
+                setActiveCategory(queryCat || '');
             } catch (err) {
                 console.error('Error al cargar categorías:', err);
             }
         };
         fetchCategorias();
-    }, []);
+    }, [location.search]);
 
     // Cargar productos
     useEffect(() => {
@@ -168,8 +175,8 @@ export default function ProductsPage() {
                             <button
                                 onClick={() => setActiveCategory('')}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${activeCategory === ''
-                                        ? 'bg-primary dark:bg-white text-white dark:text-primary'
-                                        : 'bg-white dark:bg-card-dark text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                    ? 'bg-primary dark:bg-white text-white dark:text-primary'
+                                    : 'bg-white dark:bg-card-dark text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                                     }`}
                             >
                                 <span className="material-icons text-sm">grid_view</span>
@@ -180,8 +187,8 @@ export default function ProductsPage() {
                                     key={cat.id}
                                     onClick={() => setActiveCategory(cat.id.toString())}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${activeCategory === cat.id.toString()
-                                            ? 'bg-primary dark:bg-white text-white dark:text-primary'
-                                            : 'bg-white dark:bg-card-dark text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                        ? 'bg-primary dark:bg-white text-white dark:text-primary'
+                                        : 'bg-white dark:bg-card-dark text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                                         }`}
                                 >
                                     <span className="material-icons text-sm">{cat.icono || 'category'}</span>
