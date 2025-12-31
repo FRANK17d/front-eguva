@@ -163,7 +163,11 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         if (showPaymentBrick && orderId) {
-            initPaymentBrick(orderId);
+            // Dar tiempo a React para renderizar el contenedor antes de inicializar MP
+            const timer = setTimeout(() => {
+                initPaymentBrick(orderId);
+            }, 300);
+            return () => clearTimeout(timer);
         }
     }, [showPaymentBrick, orderId, initPaymentBrick]);
 
