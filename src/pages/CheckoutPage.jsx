@@ -33,7 +33,14 @@ export default function CheckoutPage() {
 
     // Función para inicializar el Brick de Pago de Mercado Pago
     const initPaymentBrick = useCallback(async (orderId) => {
-        const mp = new window.MercadoPago('TEST-e6726f9e-33fa-46c6-becc-9babc810b3fe', {
+        const publicKey = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
+        if (!publicKey) {
+            toast.error('Error de configuración: Public Key de Mercado Pago no encontrada');
+            setLoading(false);
+            return;
+        }
+
+        const mp = new window.MercadoPago(publicKey, {
             locale: 'es-PE'
         });
         const bricksBuilder = mp.bricks();
@@ -41,10 +48,10 @@ export default function CheckoutPage() {
         const renderPaymentBrick = async (bricksBuilder) => {
             const settings = {
                 initialization: {
-                    amount: total, // monto total a pagar
-                    preferenceId: null, // No es necesario si usamos payment bricks directamente
+                    amount: total,
                     payer: {
                         email: user.correo,
+                        entityType: 'individual',
                     },
                 },
                 customization: {
@@ -78,13 +85,14 @@ export default function CheckoutPage() {
                                         navigate('/pago/pendiente?status=pending');
                                         resolve();
                                     } else {
-                                        toast.error('El pago no pudo ser procesado. Intenta con otro medio.');
+                                        toast.error(res.data.mensaje || 'Pago rechazado. Intenta con otro medio.');
                                         reject();
                                     }
                                 })
                                 .catch((error) => {
                                     console.error('Error al procesar pago:', error);
-                                    toast.error('Error interno al procesar el pago');
+                                    const errorMsg = error.response?.data?.detalles || error.response?.data?.mensaje || 'Error al procesar el pago';
+                                    toast.error(errorMsg);
                                     reject();
                                 });
                         });
