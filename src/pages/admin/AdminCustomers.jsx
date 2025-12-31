@@ -7,12 +7,21 @@ export default function AdminCustomers() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalResults, setTotalResults] = useState(0);
 
     const fetchCustomers = async () => {
         try {
             setLoading(true);
-            const response = await usuariosAPI.getAll();
-            setCustomers(response.data);
+            const response = await usuariosAPI.getAll({
+                pagina: page,
+                limite: 10,
+                buscar: searchTerm
+            });
+            setCustomers(response.data.usuarios);
+            setTotalPages(response.data.paginas);
+            setTotalResults(response.data.total);
             setError(null);
         } catch (err) {
             console.error('Error al cargar clientes:', err);
@@ -24,12 +33,16 @@ export default function AdminCustomers() {
 
     useEffect(() => {
         fetchCustomers();
-    }, []);
+    }, [page]);
 
-    const filteredCustomers = customers.filter(customer =>
-        customer.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.correo.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Búsqueda con delay para no saturar el servidor
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (page === 1) fetchCustomers();
+            else setPage(1); // Al buscar, volvemos a la página 1
+        }, 500);
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm]);
 
     return (
         <div className="space-y-8 animate-fade-in">
@@ -38,11 +51,10 @@ export default function AdminCustomers() {
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Clientes</h1>
-                    <p className="text-gray-500 dark:text-gray-400">Total registrados: <span className="font-bold text-primary dark:text-white">{customers.length}</span></p>
+                    <p className="text-gray-500 dark:text-gray-400">Total registrados: <span className="font-bold text-primary dark:text-white">{totalResults}</span></p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row w-full lg:w-auto gap-4">
-                    {/* Search Bar */}
                     <div className="relative flex-1 sm:w-80">
                         <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
                         <input
@@ -63,16 +75,14 @@ export default function AdminCustomers() {
                 </div>
             )}
 
-            {/* Customers Display */}
             <div className="bg-white dark:bg-card-dark rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
                 {loading ? (
                     <div className="p-20 text-center">
                         <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
                         <p className="text-gray-500">Cargando comunidad...</p>
                     </div>
-                ) : filteredCustomers.length > 0 ? (
+                ) : customers.length > 0 ? (
                     <>
-                        {/* Table View (Desktop) */}
                         <div className="hidden md:block overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50/50 dark:bg-gray-900/50 text-gray-400 font-bold text-[10px] tracking-widest uppercase">
@@ -84,7 +94,7 @@ export default function AdminCustomers() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                                    {filteredCustomers.map((customer) => (
+                                    {customers.map((customer) => (
                                         <tr key={customer.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/50 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-3">
@@ -99,8 +109,8 @@ export default function AdminCustomers() {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${customer.rol === 'administrador'
-                                                        ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
-                                                        : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                                                    ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
+                                                    : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
                                                     }`}>
                                                     {customer.rol}
                                                 </span>
@@ -121,9 +131,8 @@ export default function AdminCustomers() {
                             </table>
                         </div>
 
-                        {/* Mobile Card View */}
                         <div className="md:hidden divide-y divide-gray-50 dark:divide-gray-800">
-                            {filteredCustomers.map((customer) => (
+                            {customers.map((customer) => (
                                 <div key={customer.id} className="p-4 space-y-3">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
@@ -136,8 +145,8 @@ export default function AdminCustomers() {
                                             </div>
                                         </div>
                                         <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest ${customer.rol === 'administrador'
-                                                ? 'bg-purple-100 text-purple-600'
-                                                : 'bg-blue-100 text-blue-600'
+                                            ? 'bg-purple-100 text-purple-600'
+                                            : 'bg-blue-100 text-blue-600'
                                             }`}>
                                             {customer.rol}
                                         </span>
@@ -155,6 +164,47 @@ export default function AdminCustomers() {
                                 </div>
                             ))}
                         </div>
+
+                        {/* Pagination Bar */}
+                        {totalPages > 1 && (
+                            <div className="p-6 border-t border-gray-50 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/30 dark:bg-transparent">
+                                <p className="text-xs text-gray-400">
+                                    Mostrando página <span className="font-bold text-gray-600 dark:text-gray-300">{page}</span> de <span className="font-bold text-gray-600 dark:text-gray-300">{totalPages}</span>
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                                        disabled={page === 1}
+                                        className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-white dark:hover:bg-gray-800 disabled:opacity-30 transition-all cursor-pointer"
+                                    >
+                                        <span className="material-icons text-sm">chevron_left</span>
+                                    </button>
+
+                                    <div className="flex gap-1">
+                                        {[...Array(totalPages)].map((_, i) => (
+                                            <button
+                                                key={i + 1}
+                                                onClick={() => setPage(i + 1)}
+                                                className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${page === i + 1
+                                                        ? 'bg-primary text-white shadow-md'
+                                                        : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                                    }`}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <button
+                                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={page === totalPages}
+                                        className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-white dark:hover:bg-gray-800 disabled:opacity-30 transition-all cursor-pointer"
+                                    >
+                                        <span className="material-icons text-sm">chevron_right</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </>
                 ) : (
                     <div className="p-20 text-center">

@@ -32,7 +32,10 @@ export const authAPI = {
 
 // Usuarios API
 export const usuariosAPI = {
-    getAll: () => api.get('/users/lista'),
+    getAll: (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return api.get(`/users/lista${queryString ? `?${queryString}` : ''}`);
+    },
     getProfile: () => api.get('/users/perfil'),
 };
 
