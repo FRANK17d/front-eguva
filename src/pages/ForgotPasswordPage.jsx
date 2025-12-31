@@ -1,47 +1,56 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import axios from 'axios';
 import SEO from '../components/SEO';
 
+const forgotPasswordSchema = z.object({
+    correo: z.string().email('Ingresa un correo electrónico válido')
+});
+
 export default function ForgotPasswordPage() {
-    const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [error, setError] = useState('');
+    const [submittedEmail, setSubmittedEmail] = useState('');
 
-    const validateEmail = () => {
-        if (!email) {
-            setError('El correo electrónico es requerido');
-            return false;
-        }
-        if (!/\S+@\S+\.\S+/.test(email)) {
-            setError('Ingresa un correo electrónico válido');
-            return false;
-        }
-        return true;
-    };
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        reset
+    } = useForm({
+        resolver: zodResolver(forgotPasswordSchema)
+    });
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const onSubmit = async (data) => {
         setError('');
-
-        if (!validateEmail()) return;
-
         setIsLoading(true);
-        // Simular llamada a API
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsLoading(false);
-        setIsSubmitted(true);
 
-        // TODO: Implementar lógica real de recuperación de contraseña
-        console.log('Password reset requested for:', email);
+        try {
+            await axios.post(`${import.meta.env.VITE_API_URL}/auth/forgot-password`, data);
+            setSubmittedEmail(data.correo);
+            setIsSubmitted(true);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Error al procesar la solicitud');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleResend = async () => {
         setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsLoading(false);
-        // TODO: Implementar reenvío de email
-        console.log('Resend email to:', email);
+        setError('');
+
+        try {
+            await axios.post(`${import.meta.env.VITE_API_URL}/auth/forgot-password`, { correo: submittedEmail });
+        } catch (err) {
+            setError(err.response?.data?.message || 'Error al reenviar el correo');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -100,7 +109,7 @@ export default function ForgotPasswordPage() {
                                         Te hemos enviado un enlace para restablecer tu contraseña a:
                                     </p>
                                     <p className="text-primary dark:text-white font-medium mt-2">
-                                        {email}
+                                        {submittedEmail}
                                     </p>
                                 </>
                             )}
@@ -108,10 +117,10 @@ export default function ForgotPasswordPage() {
 
                         {!isSubmitted ? (
                             /* Email Form */
-                            <form onSubmit={handleSubmit} className="space-y-5">
+                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                                 {/* Email */}
                                 <div>
-                                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <label htmlFor="correo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Correo electrónico
                                     </label>
                                     <div className="relative">
@@ -120,16 +129,18 @@ export default function ForgotPasswordPage() {
                                         </span>
                                         <input
                                             type="email"
-                                            id="email"
-                                            value={email}
-                                            onChange={(e) => {
-                                                setEmail(e.target.value);
-                                                if (error) setError('');
-                                            }}
-                                            className={`w-full pl-11 pr-4 py-3 rounded-xl border ${error ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
+                                            id="correo"
+                                            {...register('correo')}
+                                            className={`w-full pl-11 pr-4 py-3 rounded-xl border ${errors.correo || error ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-white focus:border-transparent transition-all duration-300`}
                                             placeholder="tu@email.com"
                                         />
                                     </div>
+                                    {errors.correo && (
+                                        <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                                            <span className="material-icons text-sm">error</span>
+                                            {errors.correo.message}
+                                        </p>
+                                    )}
                                     {error && (
                                         <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
                                             <span className="material-icons text-sm">error</span>
@@ -200,7 +211,8 @@ export default function ForgotPasswordPage() {
                                 <button
                                     onClick={() => {
                                         setIsSubmitted(false);
-                                        setEmail('');
+                                        setSubmittedEmail('');
+                                        reset();
                                     }}
                                     className="w-full text-center text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors cursor-pointer"
                                 >

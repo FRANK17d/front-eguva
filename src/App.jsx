@@ -9,6 +9,7 @@ import AboutPage from './pages/AboutPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import CartPage from './pages/CartPage';
 import WishlistPage from './pages/WishlistPage';
 import FAQPage from './pages/FAQPage';
@@ -28,7 +29,7 @@ import { AdminRoute, GuestRoute } from './components/ProtectedRoute';
 // Layout wrapper that conditionally shows Navbar and Footer
 function Layout({ children }) {
   const location = useLocation();
-  const authRoutes = ['/iniciar-sesión', '/registro', '/recuperar-contraseña'];
+  const authRoutes = ['/iniciar-sesión', '/registro', '/recuperar-contraseña', '/restablecer-contraseña'];
   const validRoutes = [
     '/', '/productos', '/categorias', '/sobre-nosotros',
     '/carrito', '/favoritos', '/preguntas-frecuentes', '/politicas-de-envio',
@@ -101,6 +102,7 @@ function App() {
             <Route path="/iniciar-sesión" element={<GuestRoute><LoginPage /></GuestRoute>} />
             <Route path="/registro" element={<GuestRoute><RegisterPage /></GuestRoute>} />
             <Route path="/recuperar-contraseña" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+            <Route path="/restablecer-contraseña/:token" element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
             <Route path="/carrito" element={<CartPage />} />
             <Route path="/favoritos" element={<WishlistPage />} />
             <Route path="/preguntas-frecuentes" element={<FAQPage />} />
