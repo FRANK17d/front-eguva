@@ -96,7 +96,7 @@ export default function CheckoutPage() {
                 },
             };
             window.paymentBrickController = await bricksBuilder.create(
-                'paymentBrick_container',
+                'payment',
                 'paymentBrick_container',
                 settings
             );
