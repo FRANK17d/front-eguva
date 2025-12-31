@@ -1,29 +1,17 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
-
-const mockFavorites = [
-    {
-        id: 3,
-        name: 'Camisa a Cuadros',
-        category: 'Ropa',
-        price: 35.00,
-        image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=500&fit=crop',
-    },
-    {
-        id: 4,
-        name: 'Bolso de Cuero Vintage',
-        category: 'Accesorios',
-        price: 65.00,
-        image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=500&fit=crop',
-    }
-];
+import { useWishlist } from '../context/WishlistContext';
+import { useCart } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
 
 export default function WishlistPage() {
-    const [favorites, setFavorites] = useState(mockFavorites);
+    const { wishlistItems, removeFromWishlist } = useWishlist();
+    const { addToCart } = useCart();
+    const toast = useToast();
 
-    const toggleFavorite = (id) => {
-        setFavorites(prev => prev.filter(item => item.id !== id));
+    const handleAddToCart = (product) => {
+        addToCart(product);
+        toast.success(`${product.nombre} añadido al carrito`);
     };
 
     return (
@@ -43,20 +31,20 @@ export default function WishlistPage() {
                             <p className="text-gray-500 mt-2">Productos que te encantaron y quieres seguir de cerca.</p>
                         </div>
                         <p className="text-sm font-medium text-gray-400">
-                            {favorites.length} {favorites.length === 1 ? 'artículo' : 'artículos'} guardados
+                            {wishlistItems.length} {wishlistItems.length === 1 ? 'artículo' : 'artículos'} guardados
                         </p>
                     </div>
 
-                    {favorites.length > 0 ? (
+                    {wishlistItems.length > 0 ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                            {favorites.map((product) => (
+                            {wishlistItems.map((product) => (
                                 <div
                                     key={product.id}
                                     className="group bg-white dark:bg-card-dark rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-gray-100 dark:border-gray-800 relative"
                                 >
                                     {/* Remove button */}
                                     <button
-                                        onClick={() => toggleFavorite(product.id)}
+                                        onClick={() => removeFromWishlist(product.id)}
                                         className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 dark:bg-black/80 backdrop-blur-md flex items-center justify-center text-red-500 shadow-sm hover:bg-red-500 hover:text-white transition-all cursor-pointer"
                                         aria-label="Eliminar de favoritos"
                                     >
@@ -66,8 +54,8 @@ export default function WishlistPage() {
                                     {/* Image Container */}
                                     <Link to={`/producto/${product.id}`} className="block relative aspect-[4/5] overflow-hidden">
                                         <img
-                                            src={product.image}
-                                            alt={product.name}
+                                            src={product.imagen}
+                                            alt={product.nombre}
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                         />
                                         <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors" />
@@ -76,14 +64,15 @@ export default function WishlistPage() {
                                     {/* Info */}
                                     <div className="p-5">
                                         <h3 className="font-bold text-gray-900 dark:text-white text-sm md:text-base line-clamp-1 mb-1">
-                                            {product.name}
+                                            {product.nombre}
                                         </h3>
-                                        <p className="text-gray-500 text-xs mb-3">{product.category}</p>
+                                        <p className="text-gray-500 text-xs mb-3 capitalize">{product.categoria?.nombre || product.categoria}</p>
                                         <div className="flex items-center justify-between gap-2">
                                             <p className="font-display font-bold text-lg text-primary dark:text-white">
-                                                S/{product.price.toFixed(2)}
+                                                S/{parseFloat(product.precio).toFixed(2)}
                                             </p>
                                             <button
+                                                onClick={() => handleAddToCart(product)}
                                                 className="bg-primary dark:bg-white text-white dark:text-primary p-2 rounded-lg hover:opacity-90 transition-opacity cursor-pointer flex items-center justify-center"
                                                 aria-label="Añadir al carrito"
                                             >

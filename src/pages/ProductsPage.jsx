@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { productosAPI, categoriasAPI } from '../services/api';
 import SEO from '../components/SEO';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+import { useToast } from '../context/ToastContext';
 
 const conditionColors = {
     'Excelente': 'bg-green-500',
@@ -11,9 +14,29 @@ const conditionColors = {
 };
 
 function ProductCard({ product }) {
+    const { addToCart } = useCart();
+    const { toggleWishlist, isInWishlist } = useWishlist();
+    const toast = useToast();
+
     const discount = product.precioOriginal
         ? Math.round((1 - product.precio / product.precioOriginal) * 100)
         : 0;
+
+    const handleAddToCart = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        addToCart(product);
+        toast.success(`${product.nombre} añadido al carrito`);
+    };
+
+    const handleWishlist = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleWishlist(product);
+        if (!isInWishlist(product.id)) {
+            toast.success('Añadido a favoritos');
+        }
+    };
 
     return (
         <Link to={`/producto/${product.id}`} className="block group">
@@ -32,13 +55,13 @@ function ProductCard({ product }) {
                     )}
 
                     {/* Condition Badge */}
-                    <div className={`absolute top-3 left-3 ${conditionColors[product.condicion] || 'bg-gray-500'} text-white text-xs font-bold px-2 py-1 rounded-full`}>
+                    <div className={`absolute top-3 left-3 ${conditionColors[product.condicion] || 'bg-gray-500'} text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow-sm`}>
                         {product.condicion}
                     </div>
 
                     {/* Discount Badge */}
                     {discount > 0 && (
-                        <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        <div className="absolute top-3 right-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">
                             -{discount}%
                         </div>
                     )}
@@ -46,27 +69,24 @@ function ProductCard({ product }) {
                     {/* Quick Actions */}
                     <div className="absolute bottom-4 left-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300">
                         <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                // TODO: Add to cart logic
-                            }}
-                            className="flex-1 bg-primary dark:bg-white text-white dark:text-primary py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
+                            onClick={handleAddToCart}
+                            className="flex-1 bg-primary dark:bg-white text-white dark:text-primary py-2 rounded-lg font-bold text-xs uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
                             aria-label="Añadir al carrito"
                         >
                             <span className="material-icons text-sm">add_shopping_cart</span>
                             Añadir
                         </button>
                         <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                // TODO: Add to wishlist logic
-                            }}
-                            className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                            aria-label="Añadir a favoritos"
+                            onClick={handleWishlist}
+                            className={`p-2 rounded-lg shadow-lg active:scale-95 transition-all cursor-pointer ${isInWishlist(product.id)
+                                    ? 'bg-red-50 text-red-500'
+                                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                }`}
+                            title={isInWishlist(product.id) ? "Quitar de favoritos" : "Añadir a favoritos"}
                         >
-                            <span className="material-icons text-gray-600 dark:text-gray-300 text-sm">favorite_border</span>
+                            <span className="material-icons text-sm">
+                                {isInWishlist(product.id) ? 'favorite' : 'favorite_border'}
+                            </span>
                         </button>
                     </div>
                 </div>

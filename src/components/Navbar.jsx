@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 import logoEguva from '../assets/logo-eguva.png';
 
 export default function Navbar() {
@@ -11,6 +13,8 @@ export default function Navbar() {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, isAuthenticated, isAdmin, logout } = useAuth();
+    const { cartCount } = useCart();
+    const { wishlistCount } = useWishlist();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -92,10 +96,15 @@ export default function Navbar() {
                         {/* Wishlist */}
                         <Link
                             to="/favoritos"
-                            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors cursor-pointer"
+                            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors relative cursor-pointer"
                             aria-label="Lista de deseos"
                         >
                             <span className="material-icons text-gray-600 dark:text-gray-300">favorite_border</span>
+                            {wishlistCount > 0 && (
+                                <span className="absolute top-0 right-0 h-4 w-4 bg-primary dark:bg-white text-white dark:text-primary rounded-full text-[10px] font-bold flex items-center justify-center animate-bounce">
+                                    {wishlistCount}
+                                </span>
+                            )}
                         </Link>
 
                         {/* Cart */}
@@ -105,9 +114,11 @@ export default function Navbar() {
                             aria-label="Carrito de compras"
                         >
                             <span className="material-icons text-gray-600 dark:text-gray-300">shopping_bag</span>
-                            <span className="absolute top-0 right-0 h-5 w-5 bg-primary dark:bg-white text-white dark:text-primary rounded-full text-xs font-bold flex items-center justify-center">
-                                0
-                            </span>
+                            {cartCount > 0 && (
+                                <span className="absolute top-0 right-0 h-5 w-5 bg-primary dark:bg-white text-white dark:text-primary rounded-full text-xs font-bold flex items-center justify-center">
+                                    {cartCount}
+                                </span>
+                            )}
                         </Link>
 
                         {/* Account Dropdown */}

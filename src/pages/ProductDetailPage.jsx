@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { productosAPI } from '../services/api';
 import SEO from '../components/SEO';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
 const conditionStyles = {
     'Excelente': { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400', dot: 'bg-green-500' },
@@ -13,13 +17,17 @@ const conditionStyles = {
 export default function ProductDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { addToCart } = useCart();
+    const { toggleWishlist, isInWishlist } = useWishlist();
+    const { isAuthenticated } = useAuth();
+    const toast = useToast();
+
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedImage, setSelectedImage] = useState(0);
     const [quantity, setQuantity] = useState(1);
     const [addedToCart, setAddedToCart] = useState(false);
-    const [addedToWishlist, setAddedToWishlist] = useState(false);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -42,17 +50,26 @@ export default function ProductDetailPage() {
     }, [id]);
 
     const handleAddToCart = () => {
-        // TODO: Implementar lógica real del carrito
+        addToCart(product, quantity);
         setAddedToCart(true);
+        toast.success(`${product.nombre} añadido al carrito`);
         setTimeout(() => setAddedToCart(false), 2000);
     };
 
     const handleAddToWishlist = () => {
-        setAddedToWishlist(!addedToWishlist);
+        toggleWishlist(product);
+        if (!isInWishlist(product.id)) {
+            toast.success('Añadido a favoritos');
+        }
     };
 
     const handleBuyNow = () => {
-        // TODO: Implementar compra directa
+        addToCart(product, quantity);
+        if (!isAuthenticated) {
+            toast.info('Para continuar con la compra, primero debes iniciar sesión.');
+            navigate('/iniciar-sesión', { state: { from: '/carrito' } });
+            return;
+        }
         navigate('/carrito');
     };
 
@@ -296,13 +313,13 @@ export default function ProductDetailPage() {
                                 </button>
                                 <button
                                     onClick={handleAddToWishlist}
-                                    className={`w-14 h-14 rounded-lg border flex items-center justify-center transition-all cursor-pointer ${addedToWishlist
+                                    className={`w-14 h-14 rounded-lg border flex items-center justify-center transition-all cursor-pointer ${isInWishlist(product.id)
                                         ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-500'
                                         : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:text-red-500 hover:border-red-200'
                                         }`}
                                 >
                                     <span className="material-icons">
-                                        {addedToWishlist ? 'favorite' : 'favorite_border'}
+                                        {isInWishlist(product.id) ? 'favorite' : 'favorite_border'}
                                     </span>
                                 </button>
                             </div>

@@ -82,6 +82,26 @@ export const boletinAPI = {
     }
 };
 
+// Pedidos API
+export const pedidosAPI = {
+    crear: (data) => api.post('/pedidos', data),
+    getMisPedidos: () => api.get('/pedidos/mis-pedidos'),
+    getById: (id) => api.get(`/pedidos/${id}`),
+    // Admin
+    getAdmin: (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return api.get(`/pedidos/admin/lista${queryString ? `?${queryString}` : ''}`);
+    },
+    actualizarEstado: (id, estado) => api.put(`/pedidos/admin/${id}/estado`, { estado })
+};
+
+// Config API
+export const configAPI = {
+    getPublic: () => api.get('/config/public'),
+    getAdmin: () => api.get('/config'),
+    update: (data) => api.put('/config', data)
+};
+
 // Legacy - mantener compatibilidad
 export const productsAPI = productosAPI;
 

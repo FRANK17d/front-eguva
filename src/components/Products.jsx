@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { productosAPI } from '../services/api';
+import { useCart } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
 
 const conditionColors = {
     'Excelente': 'bg-green-500',
@@ -10,13 +12,23 @@ const conditionColors = {
 };
 
 function ProductCard({ product }) {
+    const { addToCart } = useCart();
+    const toast = useToast();
+
     const discount = product.precioOriginal
         ? Math.round((1 - product.precio / product.precioOriginal) * 100)
         : 0;
 
+    const handleAddToCart = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        addToCart(product);
+        toast.success(`${product.nombre} añadido al carrito`);
+    };
+
     return (
         <Link to={`/producto/${product.id}`} className="group cursor-pointer block">
-            <div className="relative overflow-hidden rounded-lg aspect-[4/5] bg-gray-100 mb-4">
+            <div className="relative overflow-hidden rounded-lg aspect-[4/5] bg-gray-100 mb-4 shadow-sm group-hover:shadow-md transition-shadow">
                 {product.imagen ? (
                     <img
                         src={product.imagen}
@@ -30,28 +42,24 @@ function ProductCard({ product }) {
                 )}
 
                 {/* Condition Badge */}
-                <div className={`absolute top-3 left-3 ${conditionColors[product.condicion] || 'bg-gray-500'} text-white text-xs font-bold px-2 py-1 rounded-full`}>
+                <div className={`absolute top-3 left-3 ${conditionColors[product.condicion] || 'bg-gray-500'} text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider`}>
                     {product.condicion}
                 </div>
 
                 {/* Discount Badge */}
                 {discount > 0 && (
-                    <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    <div className="absolute top-3 right-3 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
                         -{discount}%
                     </div>
                 )}
 
                 {/* Add to Cart Button */}
                 <button
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // TODO: Add to cart logic
-                    }}
-                    className="absolute bottom-4 right-4 bg-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 hover:bg-gray-100 cursor-pointer"
+                    onClick={handleAddToCart}
+                    className="absolute bottom-4 right-4 bg-white dark:bg-card-dark p-3 rounded-full shadow-lg opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer z-10"
                     aria-label={`Añadir ${product.nombre} al carrito`}
                 >
-                    <span className="material-icons text-sm text-black">add_shopping_cart</span>
+                    <span className="material-icons text-xl text-primary dark:text-white">add_shopping_cart</span>
                 </button>
             </div>
 

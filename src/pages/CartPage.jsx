@@ -1,42 +1,28 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import SEO from '../components/SEO';
-
-const mockCartItems = [
-    {
-        id: 1,
-        name: 'Chaqueta Denim Clásica',
-        category: 'Ropa',
-        price: 89.00,
-        image: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400&h=500&fit=crop',
-        quantity: 1,
-    },
-    {
-        id: 2,
-        name: 'Zapatillas Nike Air',
-        category: 'Zapatos',
-        price: 120.00,
-        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=500&fit=crop',
-        quantity: 1,
-    }
-];
+import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 export default function CartPage() {
-    const [cartItems, setCartItems] = useState(mockCartItems);
+    const { cartItems, updateQuantity, removeFromCart, cartTotal, shippingCost, isFreeShipping, remainingForFreeShipping, freeShippingThreshold } = useCart();
+    const { isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+    const toast = useToast();
 
-    const updateQuantity = (id, delta) => {
-        setCartItems(prev => prev.map(item =>
-            item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
-        ));
-    };
-
-    const removeItem = (id) => {
-        setCartItems(prev => prev.filter(item => item.id !== id));
-    };
-
-    const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    const shipping = 15.00;
+    const subtotal = cartTotal;
+    const shipping = shippingCost;
     const total = subtotal + shipping;
+
+    const handleCheckout = () => {
+        if (!isAuthenticated) {
+            toast.info('Para continuar con la compra, primero debes iniciar sesión.');
+            navigate('/iniciar-sesión', { state: { from: '/carrito' } });
+            return;
+        }
+        // Navegar a la página de checkout (que crearemos luego)
+        toast.info('Módulo de pago en desarrollo. ¡Pronto disponible!');
+    };
 
     return (
         <>
@@ -61,17 +47,17 @@ export default function CartPage() {
                                         className="bg-white dark:bg-card-dark rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row gap-6 transition-all hover:shadow-md"
                                     >
                                         <div className="w-full sm:w-32 h-40 sm:h-32 rounded-xl overflow-hidden flex-shrink-0">
-                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                            <img src={item.imagen} alt={item.nombre} className="w-full h-full object-cover" />
                                         </div>
 
                                         <div className="flex-grow flex flex-col justify-between">
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <h3 className="font-bold text-gray-900 dark:text-white text-lg">{item.name}</h3>
-                                                    <p className="text-gray-500 text-sm">{item.category}</p>
+                                                    <h3 className="font-bold text-gray-900 dark:text-white text-lg">{item.nombre}</h3>
+                                                    <p className="text-gray-500 text-sm capitalize">{item.categoria?.nombre || item.categoria}</p>
                                                 </div>
                                                 <button
-                                                    onClick={() => removeItem(item.id)}
+                                                    onClick={() => removeFromCart(item.id)}
                                                     className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                                                 >
                                                     <span className="material-icons">delete_outline</span>
@@ -81,21 +67,21 @@ export default function CartPage() {
                                             <div className="flex justify-between items-end mt-4">
                                                 <div className="flex items-center gap-4 bg-gray-50 dark:bg-gray-900 rounded-lg p-1 border border-gray-100 dark:border-gray-800">
                                                     <button
-                                                        onClick={() => updateQuantity(item.id, -1)}
+                                                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                                         className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-gray-800 transition-colors text-gray-500 cursor-pointer"
                                                     >
                                                         <span className="material-icons text-sm">remove</span>
                                                     </button>
                                                     <span className="font-bold text-sm w-4 text-center dark:text-white">{item.quantity}</span>
                                                     <button
-                                                        onClick={() => updateQuantity(item.id, 1)}
+                                                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                                         className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white dark:hover:bg-gray-800 transition-colors text-gray-500 cursor-pointer"
                                                     >
                                                         <span className="material-icons text-sm">add</span>
                                                     </button>
                                                 </div>
                                                 <p className="font-display font-bold text-xl text-primary dark:text-white">
-                                                    S/{(item.price * item.quantity).toFixed(2)}
+                                                    S/{(item.precio * item.quantity).toFixed(2)}
                                                 </p>
                                             </div>
                                         </div>
@@ -108,14 +94,40 @@ export default function CartPage() {
                                 <div className="bg-white dark:bg-card-dark rounded-3xl p-8 shadow-xl border border-gray-100 dark:border-gray-800 sticky top-32">
                                     <h2 className="text-xl font-bold text-primary dark:text-white mb-6">Resumen de compra</h2>
 
+                                    {/* Free Shipping Progress */}
+                                    <div className="mb-8 p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                                        {isFreeShipping ? (
+                                            <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                                                <span className="material-icons text-sm">check_circle</span>
+                                                <span className="text-sm font-bold">¡Tienes envío gratis!</span>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                    Agrega <span className="font-bold text-primary dark:text-white">S/{remainingForFreeShipping.toFixed(2)}</span> más para obtener <span className="font-bold">envío gratis</span>.
+                                                </p>
+                                                <div className="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-primary transition-all duration-500"
+                                                        style={{ width: `${Math.min(100, (cartTotal / freeShippingThreshold) * 100)}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
                                     <div className="space-y-4 mb-6">
                                         <div className="flex justify-between text-gray-600 dark:text-gray-400">
                                             <span>Subtotal</span>
                                             <span>S/{subtotal.toFixed(2)}</span>
                                         </div>
-                                        <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                                        <div className="flex justify-between text-gray-600 dark:text-gray-400 font-medium">
                                             <span>Envío</span>
-                                            <span>S/{shipping.toFixed(2)}</span>
+                                            {isFreeShipping ? (
+                                                <span className="text-green-600 dark:text-green-400 font-bold uppercase text-xs">Gratis</span>
+                                            ) : (
+                                                <span>S/{shipping.toFixed(2)}</span>
+                                            )}
                                         </div>
                                         <div className="h-px bg-gray-100 dark:bg-gray-800 w-full my-2" />
                                         <div className="flex justify-between text-xl font-bold text-primary dark:text-white">
@@ -124,7 +136,10 @@ export default function CartPage() {
                                         </div>
                                     </div>
 
-                                    <button className="w-full py-4 bg-primary dark:bg-white text-white dark:text-primary font-bold rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-primary/20 dark:shadow-white/5">
+                                    <button
+                                        onClick={handleCheckout}
+                                        className="w-full py-4 bg-primary dark:bg-white text-white dark:text-primary font-bold rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-primary/20 dark:shadow-white/5"
+                                    >
                                         Continuar al pago
                                         <span className="material-icons">arrow_forward</span>
                                     </button>
