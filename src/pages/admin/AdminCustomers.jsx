@@ -1,91 +1,167 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usuariosAPI } from '../../services/api';
 import SEO from '../../components/SEO';
 
-const initialCustomers = [
-    { id: 1, name: 'Juan Perez', email: 'juan.perez@example.com', orders: 12, totalSpent: 1450.00, lastOrder: '30/12/2025', status: 'Activo' },
-    { id: 2, name: 'Maria Garcia', email: 'maria.g@gmail.com', orders: 5, totalSpent: 420.00, lastOrder: '28/12/2025', status: 'Activo' },
-    { id: 3, name: 'Carlos Loayza', email: 'cloayza@outlook.com', orders: 2, totalSpent: 310.00, lastOrder: '25/12/2025', status: 'Inactivo' },
-    { id: 4, name: 'Ana Belén', email: 'ana.belen@empresa.pe', orders: 1, totalSpent: 45.00, lastOrder: '20/12/2025', status: 'Activo' },
-];
-
 export default function AdminCustomers() {
-    const [customers] = useState(initialCustomers);
+    const [customers, setCustomers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const fetchCustomers = async () => {
+        try {
+            setLoading(true);
+            const response = await usuariosAPI.getAll();
+            setCustomers(response.data);
+            setError(null);
+        } catch (err) {
+            console.error('Error al cargar clientes:', err);
+            setError('No se pudieron cargar los clientes. Inténtalo de nuevo más tarde.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchCustomers();
+    }, []);
+
+    const filteredCustomers = customers.filter(customer =>
+        customer.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.correo.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
         <div className="space-y-8 animate-fade-in">
             <SEO title="Gestión de Clientes | Eguva Admin" description="Administra la base de datos de clientes de Eguva." />
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Clientes</h1>
-                    <p className="text-gray-500 dark:text-gray-400">Administra y fideliza a tu comunidad.</p>
+                    <p className="text-gray-500 dark:text-gray-400">Total registrados: <span className="font-bold text-primary dark:text-white">{customers.length}</span></p>
                 </div>
-                <div className="flex gap-3">
-                    <button className="flex items-center gap-2 px-6 py-3 bg-primary dark:bg-white text-white dark:text-primary font-bold rounded-xl shadow-lg shadow-primary/20 transition-transform hover:scale-105 cursor-pointer">
-                        <span className="material-icons">person_add</span>
-                        Nuevo Cliente
-                    </button>
+
+                <div className="flex flex-col sm:flex-row w-full lg:w-auto gap-4">
+                    {/* Search Bar */}
+                    <div className="relative flex-1 sm:w-80">
+                        <span className="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                        <input
+                            type="text"
+                            placeholder="Buscar por nombre o correo..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-card-dark border border-gray-100 dark:border-gray-800 rounded-2xl text-sm focus:ring-2 focus:ring-primary outline-none transition-all shadow-sm"
+                        />
+                    </div>
                 </div>
             </div>
 
-            {/* Customers Table */}
+            {error && (
+                <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-2xl flex items-center gap-3">
+                    <span className="material-icons">error</span>
+                    <p className="font-medium">{error}</p>
+                </div>
+            )}
+
+            {/* Customers Display */}
             <div className="bg-white dark:bg-card-dark rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50/50 dark:bg-gray-900/50 text-gray-400 font-bold text-[10px] tracking-widest uppercase">
-                            <tr>
-                                <th className="px-6 py-4 text-left">Cliente</th>
-                                <th className="px-6 py-4 text-left">Pedidos</th>
-                                <th className="px-6 py-4 text-left">Total Gastado</th>
-                                <th className="px-6 py-4 text-left">Última Compra</th>
-                                <th className="px-6 py-4 text-left">Estado</th>
-                                <th className="px-6 py-4 text-right">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                            {customers.map((customer) => (
-                                <tr key={customer.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/50 transition-colors">
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                {loading ? (
+                    <div className="p-20 text-center">
+                        <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p className="text-gray-500">Cargando comunidad...</p>
+                    </div>
+                ) : filteredCustomers.length > 0 ? (
+                    <>
+                        {/* Table View (Desktop) */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50/50 dark:bg-gray-900/50 text-gray-400 font-bold text-[10px] tracking-widest uppercase">
+                                    <tr>
+                                        <th className="px-6 py-4 text-left">Cliente</th>
+                                        <th className="px-6 py-4 text-left">Rol</th>
+                                        <th className="px-6 py-4 text-left">Registro</th>
+                                        <th className="px-6 py-4 text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                                    {filteredCustomers.map((customer) => (
+                                        <tr key={customer.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-10 w-10 rounded-full bg-primary/10 dark:bg-white/10 flex items-center justify-center text-primary dark:text-white font-bold">
+                                                        {customer.nombre.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-gray-900 dark:text-white">{customer.nombre}</p>
+                                                        <p className="text-[10px] text-gray-400 lowercase">{customer.correo}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${customer.rol === 'administrador'
+                                                        ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
+                                                        : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                                                    }`}>
+                                                    {customer.rol}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                                                {new Date(customer.createdAt).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <a href={`mailto:${customer.correo}`} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-primary rounded-lg transition-colors cursor-pointer">
+                                                        <span className="material-icons text-sm">mail</span>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Card View */}
+                        <div className="md:hidden divide-y divide-gray-50 dark:divide-gray-800">
+                            {filteredCustomers.map((customer) => (
+                                <div key={customer.id} className="p-4 space-y-3">
+                                    <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
-                                            <div className="h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-primary dark:text-white font-bold">
-                                                {customer.name.charAt(0)}
+                                            <div className="h-10 w-10 rounded-full bg-primary/10 dark:bg-white/10 flex items-center justify-center text-primary dark:text-white font-bold text-sm">
+                                                {customer.nombre.charAt(0).toUpperCase()}
                                             </div>
                                             <div>
-                                                <p className="font-bold text-gray-900 dark:text-white">{customer.name}</p>
-                                                <p className="text-[10px] text-gray-400">{customer.email}</p>
+                                                <p className="font-bold text-gray-900 dark:text-white text-sm">{customer.nombre}</p>
+                                                <p className="text-[10px] text-gray-400 lowercase">{customer.correo}</p>
                                             </div>
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                        {customer.orders} pedidos
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap font-bold text-gray-900 dark:text-white">
-                                        S/ {customer.totalSpent.toFixed(2)}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                        {customer.lastOrder}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${customer.status === 'Activo' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'
+                                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest ${customer.rol === 'administrador'
+                                                ? 'bg-purple-100 text-purple-600'
+                                                : 'bg-blue-100 text-blue-600'
                                             }`}>
-                                            {customer.status}
+                                            {customer.rol}
                                         </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-primary rounded-lg transition-colors cursor-pointer">
-                                                <span className="material-icons text-sm">mail</span>
-                                            </button>
-                                            <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-primary rounded-lg transition-colors cursor-pointer">
-                                                <span className="material-icons text-sm">edit</span>
-                                            </button>
+                                    </div>
+                                    <div className="flex justify-between items-center pt-2">
+                                        <p className="text-[10px] text-gray-400">
+                                            Registrado: {new Date(customer.createdAt).toLocaleDateString()}
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <a href={`mailto:${customer.correo}`} className="p-2 bg-gray-50 dark:bg-gray-800 text-gray-400 rounded-lg">
+                                                <span className="material-icons text-xs">mail</span>
+                                            </a>
                                         </div>
-                                    </td>
-                                </tr>
+                                    </div>
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
-                </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="p-20 text-center">
+                        <span className="material-icons text-6xl text-gray-200 dark:text-gray-800 mb-4">group_off</span>
+                        <p className="text-gray-500 dark:text-gray-400">No se encontraron clientes.</p>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -30,6 +30,12 @@ export const authAPI = {
     resetPassword: (token, password) => api.put(`/auth/reset-password/${token}`, { password })
 };
 
+// Usuarios API
+export const usuariosAPI = {
+    getAll: () => api.get('/users/lista'),
+    getProfile: () => api.get('/users/perfil'),
+};
+
 // Categorías API
 export const categoriasAPI = {
     // Públicas
