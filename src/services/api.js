@@ -104,7 +104,8 @@ export const configAPI = {
 
 // Pagos API
 export const pagosAPI = {
-    crearPreferencia: (pedidoId) => api.post('/payments/create-preference', { pedidoId })
+    crearPreferencia: (pedidoId) => api.post('/payments/create-preference', { pedidoId }),
+    procesarPago: (paymentData) => api.post('/payments/process-payment', paymentData)
 };
 
 // Legacy - mantener compatibilidad
