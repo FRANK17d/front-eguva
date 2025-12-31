@@ -249,8 +249,8 @@ export default function AdminCategories() {
                                             type="button"
                                             onClick={() => setFormData({ ...formData, icono: icon })}
                                             className={`p-3 rounded-xl border transition-all cursor-pointer ${formData.icono === icon
-                                                ? 'border-primary bg-primary/10 text-primary'
-                                                : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-400'
+                                                ? 'border-primary dark:border-white bg-primary dark:bg-white text-white dark:text-primary'
+                                                : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                                                 }`}
                                         >
                                             <span className="material-icons">{icon}</span>
