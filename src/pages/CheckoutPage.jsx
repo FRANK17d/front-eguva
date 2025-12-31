@@ -114,7 +114,12 @@ export default function CheckoutPage() {
     // Procesar pago con Yape
     const handleYapePayment = async () => {
         if (!yapeForm.phoneNumber || yapeForm.otp.length !== 6) {
-            toast.error('Ingresa tu número y código OTP');
+            toast.error('Ingresa tu número de 9 dígitos y código de 6 dígitos');
+            return;
+        }
+
+        if (yapeForm.phoneNumber.length !== 9) {
+            toast.error('El número debe tener exactamente 9 dígitos');
             return;
         }
 
@@ -122,15 +127,24 @@ export default function CheckoutPage() {
         try {
             const mp = new window.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY, { locale: 'es-PE' });
 
-            // El número debe ser solo 9 dígitos (el SDK añade el código de país)
+            // Crear token de Yape
             const yape = mp.yape({
                 otp: yapeForm.otp,
                 phoneNumber: yapeForm.phoneNumber
             });
-            const yapeToken = await yape.create();
+
+            let yapeToken;
+            try {
+                yapeToken = await yape.create();
+            } catch (tokenError) {
+                console.error('Error al crear token Yape:', tokenError);
+                toast.error('Error al validar con Yape. Verifica tu número y código de aprobación.');
+                setProcessingYape(false);
+                return;
+            }
 
             if (!yapeToken?.id) {
-                toast.error('Error al validar Yape. Verifica tus datos.');
+                toast.error('No se pudo generar el token de Yape');
                 setProcessingYape(false);
                 return;
             }
@@ -150,10 +164,12 @@ export default function CheckoutPage() {
                 clearCart();
                 navigate('/pago/exitoso?status=approved');
             } else {
-                toast.error(res.data.mensaje || 'Pago rechazado');
+                toast.error(res.data.mensaje || res.data.status_detail || 'Pago rechazado');
             }
         } catch (error) {
-            toast.error(error.response?.data?.detalles || 'Error con Yape');
+            console.error('Error procesando pago Yape:', error);
+            const errorMsg = error.response?.data?.detalles || error.response?.data?.error || 'Error al procesar el pago';
+            toast.error(errorMsg);
         } finally {
             setProcessingYape(false);
         }
