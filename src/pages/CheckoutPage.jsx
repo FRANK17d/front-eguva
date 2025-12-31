@@ -122,14 +122,10 @@ export default function CheckoutPage() {
         try {
             const mp = new window.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY, { locale: 'es-PE' });
 
-            // Formatear número con código de país si no lo tiene
-            const formattedPhone = yapeForm.phoneNumber.startsWith('51')
-                ? yapeForm.phoneNumber
-                : `51${yapeForm.phoneNumber}`;
-
+            // El número debe ser solo 9 dígitos (el SDK añade el código de país)
             const yape = mp.yape({
                 otp: yapeForm.otp,
-                phoneNumber: formattedPhone
+                phoneNumber: yapeForm.phoneNumber
             });
             const yapeToken = await yape.create();
 
