@@ -181,7 +181,7 @@ export default function ProductsPage() {
             <SEO
                 title="Productos | Eguva - Ropa de Segunda Mano en Perú"
                 description="Explora nuestro catálogo de ropa, zapatos y accesorios de segunda mano. Precios desde S/20. Calidad garantizada. Envíos a todo el Perú."
-                keywords="comprar ropa usada peru, ropa segunda mano barata, zapatos usados lima, accesorios vintage peru"
+                keywords="comprar ropa usada peru, ropa segunda mano barata, zapatos usados trujillo, accesorios vintage peru"
             />
             <section className="pt-28 pb-20 bg-background-light dark:bg-background-dark min-h-screen">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

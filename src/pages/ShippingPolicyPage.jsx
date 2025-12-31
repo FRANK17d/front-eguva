@@ -46,7 +46,7 @@ export default function ShippingPolicyPage() {
                             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <li className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                                     <span className="material-icons text-green-500 text-sm">check_circle</span>
-                                    Lima Metropolitana y Callao
+                                    Trujillo y La Libertad
                                 </li>
                                 <li className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                                     <span className="material-icons text-green-500 text-sm">check_circle</span>
@@ -75,7 +75,7 @@ export default function ShippingPolicyPage() {
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                         <tr className="bg-white dark:bg-card-dark">
-                                            <td className="px-6 py-4 text-gray-900 dark:text-white font-medium">Lima Metropolitana</td>
+                                            <td className="px-6 py-4 text-gray-900 dark:text-white font-medium">Trujillo y La Libertad</td>
                                             <td className="px-6 py-4 text-gray-600 dark:text-gray-400">24 a 48 horas hábiles</td>
                                         </tr>
                                         <tr className="bg-gray-50/30 dark:bg-card-dark/50">
@@ -98,7 +98,7 @@ export default function ShippingPolicyPage() {
                                 <h2 className="text-2xl font-bold text-primary dark:text-white">Costos de Envío</h2>
                             </div>
                             <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                                El costo se calcula automáticamente al finalizar tu compra según el destino. Ofrecemos **Envío Gratis** en compras mayores a S/200.00 para Lima y S/300.00 para Provincias.
+                                El costo se calcula automáticamente al finalizar tu compra según el destino. Ofrecemos <strong className="text-primary dark:text-white">Envío Gratis</strong> en compras mayores a S/200.00 para Trujillo y S/300.00 para otras ciudades.
                             </p>
                         </div>
                     </div>

@@ -23,7 +23,7 @@ export default function CheckoutPage() {
     // Formulario de envío
     const [form, setForm] = useState({
         direccionEnvio: '',
-        ciudad: 'Lima',
+        ciudad: 'Trujillo',
         telefono: '',
         notas: ''
     });
@@ -121,11 +121,21 @@ export default function CheckoutPage() {
         setProcessingYape(true);
         try {
             const mp = new window.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY, { locale: 'es-PE' });
-            const yape = mp.yape({ otp: yapeForm.otp, phoneNumber: yapeForm.phoneNumber });
+
+            // Formatear número con código de país si no lo tiene
+            const formattedPhone = yapeForm.phoneNumber.startsWith('51')
+                ? yapeForm.phoneNumber
+                : `51${yapeForm.phoneNumber}`;
+
+            const yape = mp.yape({
+                otp: yapeForm.otp,
+                phoneNumber: formattedPhone
+            });
             const yapeToken = await yape.create();
 
             if (!yapeToken?.id) {
                 toast.error('Error al validar Yape. Verifica tus datos.');
+                setProcessingYape(false);
                 return;
             }
 
@@ -278,9 +288,16 @@ export default function CheckoutPage() {
                                                     onChange={handleChange}
                                                     className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none dark:text-white cursor-pointer"
                                                 >
-                                                    <option value="Lima">Lima Metropolitana</option>
-                                                    <option value="Callao">Callao</option>
-                                                    <option value="Provincia">Otras Provincias</option>
+                                                    <option value="Trujillo">Trujillo (La Libertad)</option>
+                                                    <option value="Lima">Lima</option>
+                                                    <option value="Arequipa">Arequipa</option>
+                                                    <option value="Chiclayo">Chiclayo</option>
+                                                    <option value="Piura">Piura</option>
+                                                    <option value="Cusco">Cusco</option>
+                                                    <option value="Ica">Ica</option>
+                                                    <option value="Huancayo">Huancayo</option>
+                                                    <option value="Tacna">Tacna</option>
+                                                    <option value="Otra">Otra ciudad</option>
                                                 </select>
                                             </div>
 

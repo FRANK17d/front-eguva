@@ -11,7 +11,7 @@ export default function HomePage() {
             <SEO
                 title="Eguva - Ropa de Segunda Mano en Perú | Moda Sostenible"
                 description="Tienda peruana de ropa, zapatos y accesorios de segunda mano en excelente estado. Moda sostenible a precios justos en soles. Envíos a todo el Perú."
-                keywords="ropa segunda mano peru, ropa usada lima, moda sostenible, ropa barata peru, eguva"
+                keywords="ropa segunda mano peru, ropa usada trujillo, moda sostenible, ropa barata peru, eguva"
             />
             <Hero />
             <Categories />
