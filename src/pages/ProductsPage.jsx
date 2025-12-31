@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 
 const allProducts = [
@@ -91,66 +92,78 @@ function ProductCard({ product }) {
     };
 
     return (
-        <div className="group cursor-pointer bg-white dark:bg-card-dark rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover-card">
-            <div className="relative overflow-hidden aspect-[4/5]">
-                <img
-                    src={product.image}
-                    alt={product.name}
-                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+        <Link to={`/producto/${product.id}`} className="block group">
+            <div className="bg-white dark:bg-card-dark rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover-card">
+                <div className="relative overflow-hidden aspect-[4/5]">
+                    <img
+                        src={product.image}
+                        alt={product.name}
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
 
-                {/* Condition Badge */}
-                <div className={`absolute top-3 left-3 ${conditionColor[product.condition]} text-white text-xs font-bold px-2 py-1 rounded-full`}>
-                    {product.condition}
-                </div>
-
-                {/* Discount Badge */}
-                {product.originalPrice && (
-                    <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                        -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                    {/* Condition Badge */}
+                    <div className={`absolute top-3 left-3 ${conditionColor[product.condition]} text-white text-xs font-bold px-2 py-1 rounded-full`}>
+                        {product.condition}
                     </div>
-                )}
 
-                {/* Quick Actions */}
-                <div className="absolute bottom-4 left-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                    <button
-                        className="flex-1 bg-primary dark:bg-white text-white dark:text-primary py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
-                        aria-label="Añadir al carrito"
-                    >
-                        <span className="material-icons text-sm">add_shopping_cart</span>
-                        Añadir
-                    </button>
-                    <button
-                        className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                        aria-label="Añadir a favoritos"
-                    >
-                        <span className="material-icons text-gray-600 dark:text-gray-300 text-sm">favorite_border</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* Product Info */}
-            <div className="p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white text-sm md:text-base group-hover:text-primary dark:group-hover:text-gray-300 transition-colors line-clamp-1">
-                    {product.name}
-                </h3>
-                <p className="text-gray-500 text-xs md:text-sm mt-1 capitalize">
-                    {product.category}
-                </p>
-
-                {/* Price in Soles */}
-                <div className="mt-3 flex items-center gap-2">
-                    <p className={`font-display font-bold text-lg ${product.originalPrice ? 'text-red-600' : 'text-primary dark:text-white'}`}>
-                        S/{product.price.toFixed(2)}
-                    </p>
+                    {/* Discount Badge */}
                     {product.originalPrice && (
-                        <p className="text-sm text-gray-400 line-through">
-                            S/{product.originalPrice.toFixed(2)}
-                        </p>
+                        <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                            -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                        </div>
                     )}
+
+                    {/* Quick Actions */}
+                    <div className="absolute bottom-4 left-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                // TODO: Add to cart logic
+                            }}
+                            className="flex-1 bg-primary dark:bg-white text-white dark:text-primary py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
+                            aria-label="Añadir al carrito"
+                        >
+                            <span className="material-icons text-sm">add_shopping_cart</span>
+                            Añadir
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                // TODO: Add to wishlist logic
+                            }}
+                            className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                            aria-label="Añadir a favoritos"
+                        >
+                            <span className="material-icons text-gray-600 dark:text-gray-300 text-sm">favorite_border</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Product Info */}
+                <div className="p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-white text-sm md:text-base group-hover:text-primary dark:group-hover:text-gray-300 transition-colors line-clamp-1">
+                        {product.name}
+                    </h3>
+                    <p className="text-gray-500 text-xs md:text-sm mt-1 capitalize">
+                        {product.category}
+                    </p>
+
+                    {/* Price in Soles */}
+                    <div className="mt-3 flex items-center gap-2">
+                        <p className={`font-display font-bold text-lg ${product.originalPrice ? 'text-red-600' : 'text-primary dark:text-white'}`}>
+                            S/{product.price.toFixed(2)}
+                        </p>
+                        {product.originalPrice && (
+                            <p className="text-sm text-gray-400 line-through">
+                                S/{product.originalPrice.toFixed(2)}
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
+        </Link>
     );
 }
 

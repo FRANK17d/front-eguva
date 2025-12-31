@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 import CategoriesPage from './pages/CategoriesPage';
 import AboutPage from './pages/AboutPage';
 import LoginPage from './pages/LoginPage';
@@ -33,13 +34,16 @@ function Layout({ children }) {
   const validRoutes = [
     '/', '/productos', '/categorias', '/sobre-nosotros',
     '/carrito', '/favoritos', '/preguntas-frecuentes', '/politicas-de-envio',
-    ...authRoutes
   ];
+  // Rutas dinámicas que empiezan con estos prefijos
+  const dynamicRoutePrefixes = ['/producto/', '/restablecer-contraseña/'];
 
   const decodedPath = decodeURIComponent(location.pathname);
-  const isAuthPage = authRoutes.includes(decodedPath);
+  const isAuthPage = authRoutes.includes(decodedPath) || decodedPath.startsWith('/restablecer-contraseña/');
   const isAdminPage = decodedPath.startsWith('/admin');
-  const is404Page = !validRoutes.includes(decodedPath) && !isAdminPage;
+  const isProductPage = decodedPath.startsWith('/producto/');
+  const isValidRoute = validRoutes.includes(decodedPath) || dynamicRoutePrefixes.some(prefix => decodedPath.startsWith(prefix));
+  const is404Page = !isValidRoute && !isAdminPage && !authRoutes.some(route => decodedPath.startsWith(route));
   const shouldHideLayout = isAuthPage || isAdminPage || is404Page;
 
   return (
@@ -97,6 +101,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/productos" element={<ProductsPage />} />
+            <Route path="/producto/:id" element={<ProductDetailPage />} />
             <Route path="/categorias" element={<CategoriesPage />} />
             <Route path="/sobre-nosotros" element={<AboutPage />} />
             <Route path="/iniciar-sesión" element={<GuestRoute><LoginPage /></GuestRoute>} />
