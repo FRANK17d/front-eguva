@@ -1,16 +1,24 @@
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 
 export default function AdminLayout() {
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-black">
-            <AdminSidebar />
+            <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
             <div className="lg:pl-64 flex flex-col min-h-screen">
                 {/* Admin Header (Mobile & User Info) */}
                 <header className="h-20 bg-white dark:bg-card-dark border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-8 sticky top-0 z-30">
                     <div className="flex items-center gap-4 lg:hidden">
-                        <span className="material-icons text-primary dark:text-white">menu</span>
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-colors"
+                        >
+                            <span className="material-icons text-primary dark:text-white">menu</span>
+                        </button>
                         <span className="font-display font-bold text-xl uppercase tracking-tighter text-primary dark:text-white">Eguva</span>
                     </div>
 

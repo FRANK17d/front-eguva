@@ -125,14 +125,14 @@ export default function AdminCategories() {
         <div className="space-y-8 animate-fade-in">
             <SEO title="Gestión de Categorías | Eguva Admin" description="Administra las categorías de productos de Eguva." />
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Categorías</h1>
-                    <p className="text-gray-500 dark:text-gray-400">Organiza tus productos por tipos y colecciones.</p>
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Categorías</h1>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Organiza tus productos por tipos y colecciones.</p>
                 </div>
                 <button
                     onClick={handleNew}
-                    className="flex items-center gap-2 px-6 py-3 bg-primary dark:bg-white text-white dark:text-primary font-bold rounded-xl shadow-lg shadow-primary/20 transition-transform hover:scale-105 cursor-pointer"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-primary dark:bg-white text-white dark:text-primary font-bold rounded-xl shadow-lg shadow-primary/20 transition-transform active:scale-95 cursor-pointer"
                 >
                     <span className="material-icons">add</span>
                     Nueva Categoría
@@ -199,105 +199,107 @@ export default function AdminCategories() {
 
             {/* Modal de Categoría */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-card-dark rounded-3xl shadow-2xl max-w-lg w-full">
-                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                                {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
-                            </h2>
-                            <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
-                                <span className="material-icons">close</span>
-                            </button>
-                        </div>
-                        <form onSubmit={handleSave} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.nombre}
-                                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary outline-none"
-                                    placeholder="Ej: Ropa, Zapatos, Accesorios"
-                                />
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 overflow-y-auto overflow-x-hidden scrollbar-hide py-6 sm:py-12">
+                    <div className="flex min-h-full items-start sm:items-center justify-center p-4">
+                        <div className="bg-white dark:bg-card-dark rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] max-w-lg w-full animate-slide-up relative overflow-hidden">
+                            <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white dark:bg-card-dark z-10 rounded-t-2xl sm:rounded-t-3xl">
+                                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                                    {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}
+                                </h2>
+                                <button onClick={() => setShowModal(false)} className="p-2 text-gray-400 hover:text-gray-600 cursor-pointer rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                                    <span className="material-icons">close</span>
+                                </button>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
-                                <textarea
-                                    rows={2}
-                                    value={formData.descripcion}
-                                    onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary outline-none resize-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL de Imagen (opcional)</label>
-                                <input
-                                    type="text"
-                                    value={formData.imagen}
-                                    onChange={(e) => setFormData({ ...formData, imagen: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary outline-none"
-                                    placeholder="https://ejemplo.com/imagen.jpg"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Icono</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {iconOptions.map(icon => (
-                                        <button
-                                            key={icon}
-                                            type="button"
-                                            onClick={() => setFormData({ ...formData, icono: icon })}
-                                            className={`p-3 rounded-xl border transition-all cursor-pointer ${formData.icono === icon
-                                                ? 'border-primary dark:border-white bg-primary dark:bg-white text-white dark:text-primary'
-                                                : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
-                                                }`}
-                                        >
-                                            <span className="material-icons">{icon}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <form onSubmit={handleSave} className="p-6 space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Orden</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
                                     <input
-                                        type="number"
-                                        min="0"
-                                        value={formData.orden}
-                                        onChange={(e) => setFormData({ ...formData, orden: parseInt(e.target.value) || 0 })}
+                                        type="text"
+                                        required
+                                        value={formData.nombre}
+                                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                                         className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary outline-none"
+                                        placeholder="Ej: Ropa, Zapatos, Accesorios"
                                     />
                                 </div>
-                                <div className="flex items-end">
-                                    <label className="flex items-center gap-2 cursor-pointer pb-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.activo}
-                                            onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
-                                            className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                                        />
-                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Activo</span>
-                                    </label>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+                                    <textarea
+                                        rows={2}
+                                        value={formData.descripcion}
+                                        onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary outline-none resize-none"
+                                    />
                                 </div>
-                            </div>
-                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowModal(false)}
-                                    className="px-6 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={saving}
-                                    className="px-6 py-2 bg-primary dark:bg-white text-white dark:text-primary font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
-                                >
-                                    {saving ? 'Guardando...' : (editingCategory ? 'Actualizar' : 'Crear')}
-                                </button>
-                            </div>
-                        </form>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL de Imagen (opcional)</label>
+                                    <input
+                                        type="text"
+                                        value={formData.imagen}
+                                        onChange={(e) => setFormData({ ...formData, imagen: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary outline-none"
+                                        placeholder="https://ejemplo.com/imagen.jpg"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Icono</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {iconOptions.map(icon => (
+                                            <button
+                                                key={icon}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, icono: icon })}
+                                                className={`p-3 rounded-xl border transition-all cursor-pointer ${formData.icono === icon
+                                                    ? 'border-primary dark:border-white bg-primary dark:bg-white text-white dark:text-primary'
+                                                    : 'border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
+                                                    }`}
+                                            >
+                                                <span className="material-icons">{icon}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Orden</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={formData.orden}
+                                            onChange={(e) => setFormData({ ...formData, orden: parseInt(e.target.value) || 0 })}
+                                            className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary outline-none"
+                                        />
+                                    </div>
+                                    <div className="flex items-end">
+                                        <label className="flex items-center gap-2 cursor-pointer pb-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.activo}
+                                                onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
+                                                className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                            />
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Activo</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div className="p-4 sm:p-6 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row justify-end gap-3 sticky bottom-0 bg-white dark:bg-card-dark z-10 rounded-b-2xl sm:rounded-b-3xl">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowModal(false)}
+                                        className="w-full sm:w-auto px-6 py-3 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-600 dark:text-gray-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={saving}
+                                        className="w-full sm:w-auto px-8 py-3 bg-primary dark:bg-white text-white dark:text-primary font-bold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer shadow-lg shadow-primary/10"
+                                    >
+                                        {saving ? 'Guardando...' : (editingCategory ? 'Actualizar' : 'Crear')}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}
