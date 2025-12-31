@@ -103,11 +103,26 @@ export default function CheckoutPage() {
                     },
                 },
             };
-            window.paymentBrickController = await bricksBuilder.create(
-                'payment',
-                'paymentBrick_container',
-                settings
-            );
+
+            // Esperar un breve momento para asegurar que el DOM se ha actualizado
+            const checkContainer = () => {
+                const container = document.getElementById('paymentBrick_container');
+                if (container) {
+                    bricksBuilder.create(
+                        'payment',
+                        'paymentBrick_container',
+                        settings
+                    ).then(controller => {
+                        window.paymentBrickController = controller;
+                    }).catch(error => {
+                        console.error('Error al crear Brick:', error);
+                    });
+                } else {
+                    setTimeout(checkContainer, 100);
+                }
+            };
+
+            checkContainer();
         };
 
         renderPaymentBrick(bricksBuilder);
