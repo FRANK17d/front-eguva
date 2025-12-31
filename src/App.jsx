@@ -12,6 +12,8 @@ import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
+import PaymentStatusPage from './pages/PaymentStatusPage';
 import WishlistPage from './pages/WishlistPage';
 import FAQPage from './pages/FAQPage';
 import ShippingPolicyPage from './pages/ShippingPolicyPage';
@@ -29,7 +31,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
-import { AdminRoute, GuestRoute } from './components/ProtectedRoute';
+import { AdminRoute, GuestRoute, PrivateRoute } from './components/ProtectedRoute';
 
 // Component to scroll to top on route change
 function ScrollToTop() {
@@ -47,7 +49,8 @@ function Layout({ children }) {
   const authRoutes = ['/iniciar-sesión', '/registro', '/recuperar-contraseña', '/restablecer-contraseña'];
   const validRoutes = [
     '/', '/productos', '/categorias', '/sobre-nosotros',
-    '/carrito', '/favoritos', '/preguntas-frecuentes', '/politicas-de-envio',
+    '/carrito', '/finalizar-compra', '/favoritos', '/preguntas-frecuentes', '/politicas-de-envio',
+    '/pago/exitoso', '/pago/fallido', '/pago/pendiente'
   ];
   // Rutas dinámicas que empiezan con estos prefijos
   const dynamicRoutePrefixes = ['/producto/', '/restablecer-contraseña/'];
@@ -127,6 +130,10 @@ function App() {
                   <Route path="/recuperar-contraseña" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
                   <Route path="/restablecer-contraseña/:token" element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
                   <Route path="/carrito" element={<CartPage />} />
+                  <Route path="/finalizar-compra" element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
+                  <Route path="/pago/exitoso" element={<PaymentStatusPage />} />
+                  <Route path="/pago/fallido" element={<PaymentStatusPage />} />
+                  <Route path="/pago/pendiente" element={<PaymentStatusPage />} />
                   <Route path="/favoritos" element={<WishlistPage />} />
                   <Route path="/preguntas-frecuentes" element={<FAQPage />} />
                   <Route path="/politicas-de-envio" element={<ShippingPolicyPage />} />

@@ -17,11 +17,10 @@ export default function CartPage() {
     const handleCheckout = () => {
         if (!isAuthenticated) {
             toast.info('Para continuar con la compra, primero debes iniciar sesión.');
-            navigate('/iniciar-sesión', { state: { from: '/carrito' } });
+            navigate('/iniciar-sesión', { state: { from: '/finalizar-compra' } });
             return;
         }
-        // Navegar a la página de checkout (que crearemos luego)
-        toast.info('Módulo de pago en desarrollo. ¡Pronto disponible!');
+        navigate('/finalizar-compra');
     };
 
     return (

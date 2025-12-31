@@ -102,6 +102,11 @@ export const configAPI = {
     update: (data) => api.put('/config', data)
 };
 
+// Pagos API
+export const pagosAPI = {
+    crearPreferencia: (pedidoId) => api.post('/payments/create-preference', { pedidoId })
+};
+
 // Legacy - mantener compatibilidad
 export const productsAPI = productosAPI;
 
