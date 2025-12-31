@@ -1,51 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { productosAPI } from '../services/api';
 import SEO from '../components/SEO';
-
-// Datos de ejemplo mientras no hay API
-const mockProducts = [
-    {
-        id: 1,
-        nombre: 'Chaqueta Denim Clásica',
-        categoria: 'Ropa',
-        condicion: 'Excelente',
-        precio: 89.00,
-        precioOriginal: 120.00,
-        imagen: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&h=1000&fit=crop',
-        descripcion: 'Chaqueta de mezclilla vintage en excelente estado. Corte clásico, perfecta para cualquier ocasión. Lavado suave que le da un toque único. Botones metálicos originales. Sin manchas ni roturas.',
-        marca: 'Levi\'s',
-        talla: 'M',
-        stock: 1,
-        imagenes: [
-            'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&h=1000&fit=crop',
-            'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800&h=1000&fit=crop',
-            'https://images.unsplash.com/photo-1495105787522-5334e3ffa0ef?w=800&h=1000&fit=crop',
-        ]
-    },
-    {
-        id: 2,
-        nombre: 'Zapatillas Nike Air',
-        categoria: 'Zapatos',
-        condicion: 'Muy Bueno',
-        precio: 120.00,
-        precioOriginal: 180.00,
-        imagen: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&h=1000&fit=crop',
-        descripcion: 'Zapatillas Nike Air Max en muy buen estado. Uso moderado, suela en perfecto estado. Ideales para uso diario o deportivo.',
-        marca: 'Nike',
-        talla: '42',
-        stock: 1,
-        imagenes: [
-            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&h=1000&fit=crop',
-            'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=800&h=1000&fit=crop',
-        ]
-    },
-];
 
 const conditionStyles = {
     'Excelente': { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400', dot: 'bg-green-500' },
     'Muy Bueno': { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-400', dot: 'bg-blue-500' },
     'Bueno': { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-400', dot: 'bg-yellow-500' },
+    'Regular': { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-700 dark:text-orange-400', dot: 'bg-orange-500' },
 };
 
 export default function ProductDetailPage() {
@@ -65,17 +27,11 @@ export default function ProductDetailPage() {
             setError(null);
 
             try {
-                // Intentar obtener de la API
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/productos/${id}`);
+                const response = await productosAPI.getById(id);
                 setProduct(response.data);
             } catch (err) {
-                // Si falla, usar datos de ejemplo
-                const mockProduct = mockProducts.find(p => p.id === parseInt(id));
-                if (mockProduct) {
-                    setProduct(mockProduct);
-                } else {
-                    setError('Producto no encontrado');
-                }
+                console.error('Error al cargar producto:', err);
+                setError('Producto no encontrado');
             } finally {
                 setLoading(false);
             }
@@ -138,16 +94,30 @@ export default function ProductDetailPage() {
         );
     }
 
-    const images = product.imagenes || [product.imagen];
+    // Manejar imagenes que puede ser string JSON, array o undefined
+    let imagenesArray = [];
+    if (product.imagenes) {
+        if (typeof product.imagenes === 'string') {
+            try {
+                imagenesArray = JSON.parse(product.imagenes);
+            } catch {
+                imagenesArray = [];
+            }
+        } else if (Array.isArray(product.imagenes)) {
+            imagenesArray = product.imagenes;
+        }
+    }
+    const images = imagenesArray.length > 0 ? imagenesArray : (product.imagen ? [product.imagen] : []);
     const discount = product.precioOriginal ? Math.round((1 - product.precio / product.precioOriginal) * 100) : 0;
     const conditionStyle = conditionStyles[product.condicion] || conditionStyles['Bueno'];
+    const categoryName = product.categoria?.nombre || 'Sin categoría';
 
     return (
         <>
             <SEO
                 title={`${product.nombre} | Eguva`}
                 description={product.descripcion?.substring(0, 160) || `Compra ${product.nombre} en Eguva. ${product.condicion}. Precio: S/${product.precio}`}
-                keywords={`${product.nombre}, ${product.categoria}, ${product.marca || ''}, ropa segunda mano peru`}
+                keywords={`${product.nombre}, ${categoryName}, ropa segunda mano peru, moda sostenible`}
             />
 
             <section className="pt-28 pb-20 bg-background-light dark:bg-background-dark min-h-screen">
@@ -166,11 +136,17 @@ export default function ProductDetailPage() {
                         <div className="space-y-4">
                             {/* Main Image */}
                             <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800">
-                                <img
-                                    src={images[selectedImage]}
-                                    alt={product.nombre}
-                                    className="w-full h-full object-cover"
-                                />
+                                {images.length > 0 ? (
+                                    <img
+                                        src={images[selectedImage]}
+                                        alt={product.nombre}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        <span className="material-icons text-6xl text-gray-300">image</span>
+                                    </div>
+                                )}
 
                                 {/* Discount Badge */}
                                 {discount > 0 && (
@@ -206,8 +182,8 @@ export default function ProductDetailPage() {
                                             key={index}
                                             onClick={() => setSelectedImage(index)}
                                             className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${selectedImage === index
-                                                    ? 'border-primary dark:border-white'
-                                                    : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                                                ? 'border-primary dark:border-white'
+                                                : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'
                                                 }`}
                                         >
                                             <img src={img} alt={`${product.nombre} ${index + 1}`} className="w-full h-full object-cover" />
@@ -230,18 +206,10 @@ export default function ProductDetailPage() {
                                 {product.nombre}
                             </h1>
 
-                            {/* Brand & Category */}
-                            <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                                {product.marca && (
-                                    <span className="flex items-center gap-1">
-                                        <span className="material-icons text-sm">verified</span>
-                                        {product.marca}
-                                    </span>
-                                )}
-                                <span className="flex items-center gap-1">
-                                    <span className="material-icons text-sm">category</span>
-                                    {product.categoria}
-                                </span>
+                            {/* Category */}
+                            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                                <span className="material-icons text-sm">category</span>
+                                <span className="capitalize">{categoryName}</span>
                             </div>
 
                             {/* Price */}
@@ -317,8 +285,8 @@ export default function ProductDetailPage() {
                                     onClick={handleAddToCart}
                                     disabled={product.stock === 0}
                                     className={`flex-1 py-4 px-6 rounded-lg font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${addedToCart
-                                            ? 'bg-green-500 text-white'
-                                            : 'bg-primary dark:bg-white text-white dark:text-primary hover:opacity-90'
+                                        ? 'bg-green-500 text-white'
+                                        : 'bg-primary dark:bg-white text-white dark:text-primary hover:opacity-90'
                                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                                 >
                                     <span className="material-icons text-xl">
@@ -329,8 +297,8 @@ export default function ProductDetailPage() {
                                 <button
                                     onClick={handleAddToWishlist}
                                     className={`w-14 h-14 rounded-lg border flex items-center justify-center transition-all cursor-pointer ${addedToWishlist
-                                            ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-500'
-                                            : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:text-red-500 hover:border-red-200'
+                                        ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-500'
+                                        : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:text-red-500 hover:border-red-200'
                                         }`}
                                 >
                                     <span className="material-icons">

@@ -54,8 +54,11 @@ export const AuthProvider = ({ children }) => {
         setIsLoggingOut(false);
     };
 
+    const token = localStorage.getItem('token');
+
     const value = {
         user,
+        token,
         loading,
         isLoggingOut,
         login,

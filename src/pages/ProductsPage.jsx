@@ -1,115 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { productosAPI, categoriasAPI } from '../services/api';
 import SEO from '../components/SEO';
 
-const allProducts = [
-    {
-        id: 1,
-        name: 'Chaqueta Denim Clásica',
-        category: 'ropa',
-        condition: 'Excelente',
-        price: 89.00,
-        originalPrice: null,
-        image: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400&h=500&fit=crop',
-    },
-    {
-        id: 2,
-        name: 'Zapatillas Nike Air',
-        category: 'zapatos',
-        condition: 'Muy Bueno',
-        price: 120.00,
-        originalPrice: 180.00,
-        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=500&fit=crop',
-    },
-    {
-        id: 3,
-        name: 'Camisa a Cuadros',
-        category: 'ropa',
-        condition: 'Excelente',
-        price: 35.00,
-        originalPrice: 45.00,
-        image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=500&fit=crop',
-    },
-    {
-        id: 4,
-        name: 'Bolso de Cuero Vintage',
-        category: 'accesorios',
-        condition: 'Bueno',
-        price: 65.00,
-        originalPrice: null,
-        image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=500&fit=crop',
-    },
-    {
-        id: 5,
-        name: 'Vestido Floral',
-        category: 'ropa',
-        condition: 'Excelente',
-        price: 55.00,
-        originalPrice: null,
-        image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=500&fit=crop',
-    },
-    {
-        id: 6,
-        name: 'Tenis Converse',
-        category: 'zapatos',
-        condition: 'Muy Bueno',
-        price: 75.00,
-        originalPrice: null,
-        image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=500&fit=crop',
-    },
-    {
-        id: 7,
-        name: 'Pantalón Jogger',
-        category: 'ropa',
-        condition: 'Excelente',
-        price: 45.00,
-        originalPrice: null,
-        image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=400&h=500&fit=crop',
-    },
-    {
-        id: 8,
-        name: 'Reloj Clásico',
-        category: 'accesorios',
-        condition: 'Muy Bueno',
-        price: 95.00,
-        originalPrice: 150.00,
-        image: 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=500&fit=crop',
-    },
-];
-
-const categories = [
-    { id: 'todos', name: 'Todos', icon: 'grid_view' },
-    { id: 'ropa', name: 'Ropa', icon: 'checkroom' },
-    { id: 'zapatos', name: 'Zapatos', icon: 'directions_walk' },
-    { id: 'accesorios', name: 'Accesorios', icon: 'watch' },
-];
+const conditionColors = {
+    'Excelente': 'bg-green-500',
+    'Muy Bueno': 'bg-blue-500',
+    'Bueno': 'bg-yellow-500',
+    'Regular': 'bg-orange-500',
+};
 
 function ProductCard({ product }) {
-    const conditionColor = {
-        'Excelente': 'bg-green-500',
-        'Muy Bueno': 'bg-blue-500',
-        'Bueno': 'bg-yellow-500',
-    };
+    const discount = product.precioOriginal
+        ? Math.round((1 - product.precio / product.precioOriginal) * 100)
+        : 0;
 
     return (
         <Link to={`/producto/${product.id}`} className="block group">
             <div className="bg-white dark:bg-card-dark rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover-card">
                 <div className="relative overflow-hidden aspect-[4/5]">
-                    <img
-                        src={product.image}
-                        alt={product.name}
-                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    {product.imagen ? (
+                        <img
+                            src={product.imagen}
+                            alt={product.nombre}
+                            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                    ) : (
+                        <div className="h-full w-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                            <span className="material-icons text-4xl text-gray-300">image</span>
+                        </div>
+                    )}
 
                     {/* Condition Badge */}
-                    <div className={`absolute top-3 left-3 ${conditionColor[product.condition]} text-white text-xs font-bold px-2 py-1 rounded-full`}>
-                        {product.condition}
+                    <div className={`absolute top-3 left-3 ${conditionColors[product.condicion] || 'bg-gray-500'} text-white text-xs font-bold px-2 py-1 rounded-full`}>
+                        {product.condicion}
                     </div>
 
                     {/* Discount Badge */}
-                    {product.originalPrice && (
+                    {discount > 0 && (
                         <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                            -{Math.round((1 - product.price / product.originalPrice) * 100)}%
+                            -{discount}%
                         </div>
                     )}
 
@@ -144,20 +74,20 @@ function ProductCard({ product }) {
                 {/* Product Info */}
                 <div className="p-4">
                     <h3 className="font-semibold text-gray-900 dark:text-white text-sm md:text-base group-hover:text-primary dark:group-hover:text-gray-300 transition-colors line-clamp-1">
-                        {product.name}
+                        {product.nombre}
                     </h3>
                     <p className="text-gray-500 text-xs md:text-sm mt-1 capitalize">
-                        {product.category}
+                        {product.categoria?.nombre || product.categoria}
                     </p>
 
                     {/* Price in Soles */}
                     <div className="mt-3 flex items-center gap-2">
-                        <p className={`font-display font-bold text-lg ${product.originalPrice ? 'text-red-600' : 'text-primary dark:text-white'}`}>
-                            S/{product.price.toFixed(2)}
+                        <p className={`font-display font-bold text-lg ${discount > 0 ? 'text-red-600' : 'text-primary dark:text-white'}`}>
+                            S/{parseFloat(product.precio).toFixed(2)}
                         </p>
-                        {product.originalPrice && (
+                        {product.precioOriginal && (
                             <p className="text-sm text-gray-400 line-through">
-                                S/{product.originalPrice.toFixed(2)}
+                                S/{parseFloat(product.precioOriginal).toFixed(2)}
                             </p>
                         )}
                     </div>
@@ -168,18 +98,49 @@ function ProductCard({ product }) {
 }
 
 export default function ProductsPage() {
-    const [activeCategory, setActiveCategory] = useState('todos');
-    const [sortBy, setSortBy] = useState('newest');
+    const [productos, setProductos] = useState([]);
+    const [categorias, setCategorias] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [activeCategory, setActiveCategory] = useState('');
+    const [sortBy, setSortBy] = useState('recientes');
+    const [total, setTotal] = useState(0);
 
-    const filteredProducts = activeCategory === 'todos'
-        ? allProducts
-        : allProducts.filter(p => p.category === activeCategory);
+    // Cargar categorías
+    useEffect(() => {
+        const fetchCategorias = async () => {
+            try {
+                const response = await categoriasAPI.getAll();
+                setCategorias(response.data);
+            } catch (err) {
+                console.error('Error al cargar categorías:', err);
+            }
+        };
+        fetchCategorias();
+    }, []);
 
-    const sortedProducts = [...filteredProducts].sort((a, b) => {
-        if (sortBy === 'price-low') return a.price - b.price;
-        if (sortBy === 'price-high') return b.price - a.price;
-        return 0;
-    });
+    // Cargar productos
+    useEffect(() => {
+        const fetchProductos = async () => {
+            try {
+                setLoading(true);
+                const params = {
+                    orden: sortBy,
+                    limite: 20
+                };
+                if (activeCategory) params.categoria = activeCategory;
+
+                const response = await productosAPI.getAll(params);
+                setProductos(response.data.productos);
+                setTotal(response.data.total);
+            } catch (err) {
+                console.error('Error al cargar productos:', err);
+                setProductos([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProductos();
+    }, [activeCategory, sortBy]);
 
     return (
         <>
@@ -204,17 +165,27 @@ export default function ProductsPage() {
                     <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-8">
                         {/* Category Tabs */}
                         <div className="flex flex-wrap gap-2">
-                            {categories.map((cat) => (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => setActiveCategory(cat.id)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${activeCategory === cat.id
+                            <button
+                                onClick={() => setActiveCategory('')}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${activeCategory === ''
                                         ? 'bg-primary dark:bg-white text-white dark:text-primary'
                                         : 'bg-white dark:bg-card-dark text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                    }`}
+                            >
+                                <span className="material-icons text-sm">grid_view</span>
+                                Todos
+                            </button>
+                            {categorias.map((cat) => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => setActiveCategory(cat.id.toString())}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${activeCategory === cat.id.toString()
+                                            ? 'bg-primary dark:bg-white text-white dark:text-primary'
+                                            : 'bg-white dark:bg-card-dark text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                                         }`}
                                 >
-                                    <span className="material-icons text-sm">{cat.icon}</span>
-                                    {cat.name}
+                                    <span className="material-icons text-sm">{cat.icono || 'category'}</span>
+                                    {cat.nombre}
                                 </button>
                             ))}
                         </div>
@@ -225,26 +196,31 @@ export default function ProductsPage() {
                             onChange={(e) => setSortBy(e.target.value)}
                             className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-card-dark text-gray-700 dark:text-gray-300 text-sm focus:ring-2 focus:ring-primary dark:focus:ring-white cursor-pointer"
                         >
-                            <option value="newest">Más recientes</option>
-                            <option value="price-low">Precio: Menor a mayor</option>
-                            <option value="price-high">Precio: Mayor a menor</option>
+                            <option value="recientes">Más recientes</option>
+                            <option value="precio-asc">Precio: Menor a mayor</option>
+                            <option value="precio-desc">Precio: Mayor a menor</option>
+                            <option value="nombre">Nombre A-Z</option>
                         </select>
                     </div>
 
                     {/* Results Count */}
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                        Mostrando {sortedProducts.length} productos
+                        Mostrando {productos.length} de {total} productos
                     </p>
 
                     {/* Products Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                        {sortedProducts.map((product) => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </div>
-
-                    {/* Empty State */}
-                    {sortedProducts.length === 0 && (
+                    {loading ? (
+                        <div className="text-center py-20">
+                            <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                            <p className="text-gray-500">Cargando productos...</p>
+                        </div>
+                    ) : productos.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                            {productos.map((product) => (
+                                <ProductCard key={product.id} product={product} />
+                            ))}
+                        </div>
+                    ) : (
                         <div className="text-center py-20">
                             <span className="material-icons text-6xl text-gray-300 dark:text-gray-600 mb-4">inventory_2</span>
                             <p className="text-gray-500 dark:text-gray-400">No hay productos en esta categoría.</p>

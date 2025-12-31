@@ -1,50 +1,27 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { categoriasAPI } from '../services/api';
 import SEO from '../components/SEO';
 
-const categories = [
-    {
-        id: 'ropa',
-        name: 'Ropa',
-        description: 'Camisas, vestidos, pantalones, chaquetas y más.',
-        itemCount: 45,
-        icon: 'checkroom',
-        image: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=600&h=800&fit=crop',
-    },
-    {
-        id: 'zapatos',
-        name: 'Zapatos',
-        description: 'Tenis, tacones, botas, sandalias y calzado casual.',
-        itemCount: 28,
-        icon: 'directions_walk',
-        image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&h=800&fit=crop',
-    },
-    {
-        id: 'accesorios',
-        name: 'Accesorios',
-        description: 'Bolsos, carteras, cinturones, joyería y más.',
-        itemCount: 32,
-        icon: 'watch',
-        image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=800&fit=crop',
-    },
-    {
-        id: 'hogar',
-        name: 'Hogar',
-        description: 'Decoración, textiles y artículos para el hogar.',
-        itemCount: 15,
-        icon: 'home',
-        image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=800&fit=crop',
-    },
-];
+// Imágenes por defecto para categorías sin imagen
+const defaultImages = {
+    ropa: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=600&h=800&fit=crop',
+    zapatos: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600&h=800&fit=crop',
+    accesorios: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=800&fit=crop',
+    otros: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=800&fit=crop',
+};
 
 function CategoryCard({ category }) {
+    const image = category.imagen || defaultImages[category.slug] || defaultImages.otros;
+
     return (
         <Link
             to={`/productos?categoria=${category.id}`}
             className="group relative block aspect-square md:aspect-[4/5] overflow-hidden rounded-xl bg-gray-200 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer"
         >
             <img
-                src={category.image}
-                alt={category.name}
+                src={image}
+                alt={category.nombre}
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
 
@@ -56,23 +33,20 @@ function CategoryCard({ category }) {
                 <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                     {/* Icon */}
                     <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mb-4 group-hover:bg-white/30 transition-colors">
-                        <span className="material-icons text-white text-2xl">{category.icon}</span>
+                        <span className="material-icons text-white text-2xl">{category.icono || 'category'}</span>
                     </div>
 
                     {/* Title */}
                     <h3 className="font-display text-2xl md:text-3xl font-bold text-white uppercase mb-2">
-                        {category.name}
+                        {category.nombre}
                     </h3>
 
-                    {/* Item Count */}
-                    <p className="text-white/80 text-sm mb-2">
-                        {category.itemCount} artículos disponibles
-                    </p>
-
                     {/* Description */}
-                    <p className="text-white/70 text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 line-clamp-2">
-                        {category.description}
-                    </p>
+                    {category.descripcion && (
+                        <p className="text-white/70 text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 line-clamp-2">
+                            {category.descripcion}
+                        </p>
+                    )}
 
                     {/* Arrow */}
                     <div className="flex items-center gap-2 mt-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -86,6 +60,24 @@ function CategoryCard({ category }) {
 }
 
 export default function CategoriesPage() {
+    const [categorias, setCategorias] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchCategorias = async () => {
+            try {
+                setLoading(true);
+                const response = await categoriasAPI.getAll();
+                setCategorias(response.data);
+            } catch (err) {
+                console.error('Error al cargar categorías:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCategorias();
+    }, []);
+
     return (
         <>
             <SEO
@@ -106,11 +98,23 @@ export default function CategoriesPage() {
                     </div>
 
                     {/* Categories Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                        {categories.map((category) => (
-                            <CategoryCard key={category.id} category={category} />
-                        ))}
-                    </div>
+                    {loading ? (
+                        <div className="text-center py-20">
+                            <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                            <p className="text-gray-500">Cargando categorías...</p>
+                        </div>
+                    ) : categorias.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                            {categorias.map((category) => (
+                                <CategoryCard key={category.id} category={category} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-20">
+                            <span className="material-icons text-6xl text-gray-300 dark:text-gray-600 mb-4">category</span>
+                            <p className="text-gray-500 dark:text-gray-400">No hay categorías disponibles.</p>
+                        </div>
+                    )}
 
                     {/* CTA Section */}
                     <div className="mt-16 text-center bg-white dark:bg-card-dark rounded-2xl p-8 md:p-12 shadow-lg">
