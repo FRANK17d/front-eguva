@@ -152,7 +152,7 @@ export default function CheckoutPage() {
             const res = await pagosAPI.procesarPago({
                 payment: {
                     token: yapeToken.id,
-                    transaction_amount: total,
+                    transaction_amount: parseFloat(total.toFixed(2)),
                     installments: 1,
                     payment_method_id: 'yape',
                     payer: { email: user.correo }
