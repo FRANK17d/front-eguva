@@ -21,6 +21,7 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminCustomers from './pages/admin/AdminCustomers';
+import AdminNewsletter from './pages/admin/AdminNewsletter';
 import AdminSettings from './pages/admin/AdminSettings';
 import NotFoundPage from './pages/NotFoundPage';
 import GoogleCallbackPage from './pages/GoogleCallbackPage';
@@ -136,6 +137,7 @@ function App() {
                 <Route path="pedidos" element={<AdminOrders />} />
                 <Route path="categorias" element={<AdminCategories />} />
                 <Route path="clientes" element={<AdminCustomers />} />
+                <Route path="boletin" element={<AdminNewsletter />} />
                 <Route path="configuracion" element={<AdminSettings />} />
               </Route>
 

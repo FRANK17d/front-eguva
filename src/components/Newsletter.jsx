@@ -1,16 +1,32 @@
 import { useState } from 'react';
+import { boletinAPI } from '../services/api';
+import { useToast } from '../context/ToastContext';
 
 export default function Newsletter() {
     const [email, setEmail] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const toast = useToast();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (email) {
-            console.log('Newsletter subscription:', email);
+        if (!email) return;
+
+        try {
+            setIsLoading(true);
+            await boletinAPI.suscribir(email);
+
             setIsSubmitted(true);
             setEmail('');
-            setTimeout(() => setIsSubmitted(false), 3000);
+            toast.success('¡Genial! Te has suscrito correctamente.');
+
+            setTimeout(() => setIsSubmitted(false), 5000);
+        } catch (err) {
+            console.error('Error al suscribir:', err);
+            const mensaje = err.response?.data?.mensaje || 'Hubo un error al procesar tu suscripción.';
+            toast.error(mensaje);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -44,9 +60,16 @@ export default function Newsletter() {
                     />
                     <button
                         type="submit"
-                        className="px-8 py-3 bg-primary text-white font-bold uppercase tracking-wide hover:bg-gray-800 transition-colors rounded-lg shadow-lg hover:shadow-xl cursor-pointer"
+                        disabled={isLoading}
+                        className={`px-8 py-3 bg-primary text-white font-bold uppercase tracking-wide hover:bg-gray-800 transition-colors rounded-lg shadow-lg hover:shadow-xl cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center min-w-[140px]`}
                     >
-                        {isSubmitted ? '¡Listo!' : 'Avisarme'}
+                        {isLoading ? (
+                            <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : isSubmitted ? (
+                            '¡Listo!'
+                        ) : (
+                            'Avisarme'
+                        )}
                     </button>
                 </form>
 

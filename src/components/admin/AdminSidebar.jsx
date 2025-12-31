@@ -7,6 +7,7 @@ const menuItems = [
     { name: 'Pedidos', icon: 'shopping_cart', href: '/admin/pedidos' },
     { name: 'Categorías', icon: 'category', href: '/admin/categorias' },
     { name: 'Clientes', icon: 'people', href: '/admin/clientes' },
+    { name: 'Boletín', icon: 'mail', href: '/admin/boletin' },
     { name: 'Configuración', icon: 'settings', href: '/admin/configuracion' },
 ];
 

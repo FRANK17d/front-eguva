@@ -73,6 +73,15 @@ export const productosAPI = {
     delete: (id) => api.delete(`/productos/${id}`)
 };
 
+// Boletin API
+export const boletinAPI = {
+    suscribir: (correo) => api.post('/boletin/suscribir', { correo }),
+    listar: (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return api.get(`/boletin/lista${queryString ? `?${queryString}` : ''}`);
+    }
+};
+
 // Legacy - mantener compatibilidad
 export const productsAPI = productosAPI;
 
