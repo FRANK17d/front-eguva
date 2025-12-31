@@ -104,6 +104,8 @@ export default function ProductsPage() {
     const [activeCategory, setActiveCategory] = useState('');
     const [sortBy, setSortBy] = useState('recientes');
     const [total, setTotal] = useState(0);
+    const [pagina, setPagina] = useState(1);
+    const [totalPaginas, setTotalPaginas] = useState(1);
 
     const location = useLocation();
 
@@ -118,6 +120,7 @@ export default function ProductsPage() {
                 const params = new URLSearchParams(location.search);
                 const queryCat = params.get('categoria');
                 setActiveCategory(queryCat || '');
+                setPagina(1); // Resetear a página 1 al cambiar categoría por URL
             } catch (err) {
                 console.error('Error al cargar categorías:', err);
             }
@@ -132,13 +135,15 @@ export default function ProductsPage() {
                 setLoading(true);
                 const params = {
                     orden: sortBy,
-                    limite: 20
+                    limite: 12, // Cargamos 12 productos por página
+                    pagina: pagina
                 };
                 if (activeCategory) params.categoria = activeCategory;
 
                 const response = await productosAPI.getAll(params);
                 setProductos(response.data.productos);
                 setTotal(response.data.total);
+                setTotalPaginas(response.data.totalPaginas);
             } catch (err) {
                 console.error('Error al cargar productos:', err);
                 setProductos([]);
@@ -147,7 +152,7 @@ export default function ProductsPage() {
             }
         };
         fetchProductos();
-    }, [activeCategory, sortBy]);
+    }, [activeCategory, sortBy, pagina]);
 
     return (
         <>
@@ -222,11 +227,58 @@ export default function ProductsPage() {
                             <p className="text-gray-500">Cargando productos...</p>
                         </div>
                     ) : productos.length > 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                            {productos.map((product) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
-                        </div>
+                        <>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                {productos.map((product) => (
+                                    <ProductCard key={product.id} product={product} />
+                                ))}
+                            </div>
+
+                            {/* Pagination Buttons */}
+                            {totalPaginas > 1 && (
+                                <div className="mt-12 flex justify-center items-center gap-4">
+                                    <button
+                                        onClick={() => {
+                                            setPagina(p => Math.max(1, p - 1));
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }}
+                                        disabled={pagina === 1}
+                                        className="p-2 border border-gray-200 dark:border-gray-700 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                                    >
+                                        <span className="material-icons">chevron_left</span>
+                                    </button>
+
+                                    <div className="flex items-center gap-2">
+                                        {[...Array(totalPaginas)].map((_, i) => (
+                                            <button
+                                                key={i + 1}
+                                                onClick={() => {
+                                                    setPagina(i + 1);
+                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                }}
+                                                className={`w-10 h-10 rounded-full text-sm font-bold transition-all cursor-pointer ${pagina === i + 1
+                                                    ? 'bg-primary dark:bg-white text-white dark:text-primary shadow-lg'
+                                                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                                    }`}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            setPagina(p => Math.min(totalPaginas, p + 1));
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }}
+                                        disabled={pagina === totalPaginas}
+                                        className="p-2 border border-gray-200 dark:border-gray-700 rounded-full text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                                    >
+                                        <span className="material-icons">chevron_right</span>
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="text-center py-20">
                             <span className="material-icons text-6xl text-gray-300 dark:text-gray-600 mb-4">inventory_2</span>
@@ -256,7 +308,7 @@ export default function ProductsPage() {
                         </a>
                     </div>
                 </div>
-            </section>
+            </section >
         </>
     );
 }

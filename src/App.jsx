@@ -28,6 +28,15 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { AdminRoute, GuestRoute } from './components/ProtectedRoute';
 
+// Component to scroll to top on route change
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname, search]);
+  return null;
+}
+
 
 // Layout wrapper that conditionally shows Navbar and Footer
 function Layout({ children }) {
@@ -100,6 +109,7 @@ function App() {
     <ToastProvider>
       <AuthProvider>
         <Router>
+          <ScrollToTop />
           <Layout>
             <Routes>
               <Route path="/" element={<HomePage />} />
