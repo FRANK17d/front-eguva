@@ -87,14 +87,19 @@ export default function CheckoutPage() {
                                 clearCart();
                                 navigate('/pago/pendiente?status=pending');
                             } else {
-                                toast.error(res.data.mensaje || 'Pago rechazado');
+                                toast.error(res.data.mensaje || 'El pago no pudo ser procesado');
                             }
                         })
                         .catch((error) => {
-                            toast.error(error.response?.data?.detalles || 'Error al procesar');
+                            const msg = error.response?.data?.detalles || error.response?.data?.mensaje;
+                            if (msg) {
+                                toast.error(msg);
+                            } else {
+                                toast.error('Error al procesar el pago. Verifica los datos de tu tarjeta.');
+                            }
                         });
                 },
-                onError: () => toast.error('Error en la pasarela de pago'),
+                onError: () => toast.error('Error de conexión. Recarga la página e intenta de nuevo.'),
             },
         };
 
@@ -103,7 +108,7 @@ export default function CheckoutPage() {
             if (container) {
                 bricksBuilder.create('payment', 'paymentBrick_container', settings)
                     .then(controller => { window.paymentBrickController = controller; })
-                    .catch(console.error);
+                    .catch(() => { });
             } else {
                 setTimeout(checkContainer, 100);
             }
@@ -123,11 +128,15 @@ export default function CheckoutPage() {
             return;
         }
 
+        if (total < 2) {
+            toast.error('El monto mínimo de compra es S/2.00');
+            return;
+        }
+
         setProcessingYape(true);
         try {
             const mp = new window.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY, { locale: 'es-PE' });
 
-            // Crear token de Yape
             const yape = mp.yape({
                 otp: yapeForm.otp,
                 phoneNumber: yapeForm.phoneNumber
@@ -136,15 +145,14 @@ export default function CheckoutPage() {
             let yapeToken;
             try {
                 yapeToken = await yape.create();
-            } catch (tokenError) {
-                console.error('Error al crear token Yape:', tokenError);
-                toast.error('Error al validar con Yape. Verifica tu número y código de aprobación.');
+            } catch {
+                toast.error('Código de aprobación inválido o expirado. Genera uno nuevo en tu app Yape.');
                 setProcessingYape(false);
                 return;
             }
 
             if (!yapeToken?.id) {
-                toast.error('No se pudo generar el token de Yape');
+                toast.error('No se pudo validar con Yape. Intenta de nuevo.');
                 setProcessingYape(false);
                 return;
             }
@@ -164,12 +172,27 @@ export default function CheckoutPage() {
                 clearCart();
                 navigate('/pago/exitoso?status=approved');
             } else {
-                toast.error(res.data.mensaje || res.data.status_detail || 'Pago rechazado');
+                // Mensajes específicos según el error
+                const detail = res.data.status_detail || '';
+                if (detail.includes('insufficient_amount')) {
+                    toast.error('Saldo insuficiente en tu Yape');
+                } else if (detail.includes('rejected')) {
+                    toast.error('El pago fue rechazado. Verifica tu número de Yape.');
+                } else {
+                    toast.error(res.data.mensaje || 'No se pudo completar el pago');
+                }
             }
         } catch (error) {
-            console.error('Error procesando pago Yape:', error);
-            const errorMsg = error.response?.data?.detalles || error.response?.data?.error || 'Error al procesar el pago';
-            toast.error(errorMsg);
+            const errorDetail = error.response?.data?.detalles || '';
+            if (errorDetail.includes('insufficient')) {
+                toast.error('Saldo insuficiente en tu Yape');
+            } else if (errorDetail.includes('rejected') || errorDetail.includes('denied')) {
+                toast.error('El pago fue rechazado. Verifica tu número de Yape.');
+            } else if (errorDetail.includes('limit')) {
+                toast.error('El monto supera tu límite de Yape');
+            } else {
+                toast.error('Error al procesar el pago. Intenta de nuevo.');
+            }
         } finally {
             setProcessingYape(false);
         }
