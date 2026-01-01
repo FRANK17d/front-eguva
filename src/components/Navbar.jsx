@@ -167,6 +167,15 @@ export default function Navbar() {
                                                 </Link>
                                             )}
 
+                                            {/* Mis Pedidos */}
+                                            <Link
+                                                to="/mis-pedidos"
+                                                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                                            >
+                                                <span className="material-icons text-primary dark:text-white text-xl">shopping_bag</span>
+                                                <span className="font-medium">Mis Pedidos</span>
+                                            </Link>
+
                                             {/* Logout */}
                                             <button
                                                 onClick={handleLogout}

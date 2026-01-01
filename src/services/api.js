@@ -85,7 +85,10 @@ export const boletinAPI = {
 // Pedidos API
 export const pedidosAPI = {
     crear: (data) => api.post('/pedidos', data),
-    getMisPedidos: () => api.get('/pedidos/mis-pedidos'),
+    getMisPedidos: (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return api.get(`/pedidos/mis-pedidos${queryString ? `?${queryString}` : ''}`);
+    },
     getById: (id) => api.get(`/pedidos/${id}`),
     // Admin
     getAdmin: (params = {}) => {

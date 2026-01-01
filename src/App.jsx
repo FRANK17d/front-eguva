@@ -13,6 +13,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
+import MisPedidosPage from './pages/MisPedidosPage';
 import PaymentStatusPage from './pages/PaymentStatusPage';
 import WishlistPage from './pages/WishlistPage';
 import FAQPage from './pages/FAQPage';
@@ -50,7 +51,7 @@ function Layout({ children }) {
   const validRoutes = [
     '/', '/productos', '/categorias', '/sobre-nosotros',
     '/carrito', '/finalizar-compra', '/favoritos', '/preguntas-frecuentes', '/politicas-de-envio',
-    '/pago/exitoso', '/pago/fallido', '/pago/pendiente'
+    '/pago/exitoso', '/pago/fallido', '/pago/pendiente', '/mis-pedidos'
   ];
   // Rutas dinámicas que empiezan con estos prefijos
   const dynamicRoutePrefixes = ['/producto/', '/restablecer-contraseña/'];
@@ -131,6 +132,7 @@ function App() {
                   <Route path="/restablecer-contraseña/:token" element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
                   <Route path="/carrito" element={<CartPage />} />
                   <Route path="/finalizar-compra" element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
+                  <Route path="/mis-pedidos" element={<PrivateRoute><MisPedidosPage /></PrivateRoute>} />
                   <Route path="/pago/exitoso" element={<PaymentStatusPage />} />
                   <Route path="/pago/fallido" element={<PaymentStatusPage />} />
                   <Route path="/pago/pendiente" element={<PaymentStatusPage />} />
