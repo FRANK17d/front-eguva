@@ -128,7 +128,17 @@ export default function Navbar() {
                                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors cursor-pointer"
                                 aria-label="Cuenta de usuario"
                             >
-                                <span className="material-icons text-gray-600 dark:text-gray-300">person</span>
+                                {isAuthenticated && user?.nombre ? (
+                                    <div className="w-7 h-7 bg-primary dark:bg-white rounded-full flex items-center justify-center">
+                                        <span className="text-xs font-bold text-white dark:text-primary uppercase">
+                                            {user.nombre.split(' ').length > 1
+                                                ? user.nombre.split(' ').slice(0, 2).map(n => n[0]).join('')
+                                                : user.nombre.slice(0, 2)}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <span className="material-icons text-gray-600 dark:text-gray-300">person</span>
+                                )}
                             </button>
 
                             {/* Dropdown Menu */}
