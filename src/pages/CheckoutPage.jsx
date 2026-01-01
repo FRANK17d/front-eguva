@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import SEO from '../components/SEO';
 import { pedidosAPI, pagosAPI } from '../services/api';
+import ubigeoData from '../data/ubigeo.json';
 
 export default function CheckoutPage() {
     const { cartItems, cartTotal, shippingCost, isFreeShipping, clearCart } = useCart();
@@ -20,19 +21,55 @@ export default function CheckoutPage() {
     const [yapeForm, setYapeForm] = useState({ phoneNumber: '', otp: '' });
     const [processingYape, setProcessingYape] = useState(false);
 
-    // Formulario de envío
+    // Formulario de envío (el cliente recoge en agencia)
     const [form, setForm] = useState({
-        direccionEnvio: '',
-        ciudad: 'Trujillo',
+        nombreCompleto: user?.nombre || '',
+        dni: '',
+        departamentoId: '13', // La Libertad por defecto
+        provinciaId: '1301',  // Trujillo por defecto
+        distritoId: '',
+        codigoPostal: '',
         telefono: '',
         notas: ''
     });
+
+    // Filtrar provincias según departamento seleccionado
+    const provinciasDisponibles = useMemo(() => {
+        return ubigeoData.provincias[form.departamentoId] || [];
+    }, [form.departamentoId]);
+
+    // Filtrar distritos según provincia seleccionada
+    const distritosDisponibles = useMemo(() => {
+        return ubigeoData.distritos[form.provinciaId] || [];
+    }, [form.provinciaId]);
 
     const subtotal = cartTotal;
     const total = subtotal + shippingCost;
 
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        // Si cambia el departamento, resetear provincia y distrito
+        if (name === 'departamentoId') {
+            const primerasProv = ubigeoData.provincias[value] || [];
+            setForm({
+                ...form,
+                departamentoId: value,
+                provinciaId: primerasProv[0]?.id || '',
+                distritoId: ''
+            });
+        }
+        // Si cambia la provincia, resetear distrito
+        else if (name === 'provinciaId') {
+            setForm({
+                ...form,
+                provinciaId: value,
+                distritoId: ''
+            });
+        }
+        else {
+            setForm({ ...form, [name]: value });
+        }
     };
 
     // Inicializar Payment Brick
@@ -204,10 +241,22 @@ export default function CheckoutPage() {
         setLoading(true);
 
         try {
+            // Convertir IDs de ubigeo a nombres
+            const depSeleccionado = ubigeoData.departamentos.find(d => d.id === form.departamentoId);
+            const provSeleccionada = provinciasDisponibles.find(p => p.id === form.provinciaId);
+            const distSeleccionado = distritosDisponibles.find(d => d.id === form.distritoId);
+
             const pedidoData = {
                 items: cartItems.map(item => ({ productoId: item.id, cantidad: item.quantity })),
                 metodoPago: 'MercadoPago',
-                ...form
+                nombreCompleto: form.nombreCompleto,
+                dni: form.dni,
+                departamento: depSeleccionado?.nombre || form.departamentoId,
+                provincia: provSeleccionada?.nombre || form.provinciaId,
+                distrito: distSeleccionado?.nombre || form.distritoId,
+                codigoPostal: form.codigoPostal,
+                telefono: form.telefono,
+                notas: form.notas
             };
 
             const response = await pedidosAPI.crear(pedidoData);
@@ -287,53 +336,107 @@ export default function CheckoutPage() {
                                             <div className="md:col-span-2">
                                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                                                     <span className="material-icons text-sm align-middle mr-1">person</span>
-                                                    Nombre
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={user?.nombre || ''}
-                                                    readOnly
-                                                    className="w-full px-4 py-3.5 bg-gray-100 dark:bg-gray-900/50 rounded-xl text-gray-600 dark:text-gray-400 cursor-not-allowed"
-                                                />
-                                            </div>
-
-                                            <div className="md:col-span-2">
-                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                                                    <span className="material-icons text-sm align-middle mr-1">home</span>
-                                                    Dirección de Envío *
+                                                    Nombres Completos *
                                                 </label>
                                                 <input
                                                     required
-                                                    name="direccionEnvio"
-                                                    value={form.direccionEnvio}
+                                                    type="text"
+                                                    name="nombreCompleto"
+                                                    value={form.nombreCompleto}
                                                     onChange={handleChange}
-                                                    placeholder="Av. Ejemplo 123, Dpto 4B"
-                                                    className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all dark:text-white"
+                                                    placeholder="Ej: Juan Carlos Pérez López"
+                                                    className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none dark:text-white"
                                                 />
+                                            </div>
+
+                                            {/* Mensaje informativo */}
+                                            <div className="md:col-span-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                                                <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                                                    <span className="material-icons text-lg">local_shipping</span>
+                                                    <span>Tu pedido será enviado por agencia. Deberás recogerlo con tu DNI.</span>
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                                    <span className="material-icons text-sm align-middle mr-1">map</span>
+                                                    Departamento *
+                                                </label>
+                                                <select
+                                                    required
+                                                    name="departamentoId"
+                                                    value={form.departamentoId}
+                                                    onChange={handleChange}
+                                                    className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none dark:text-white cursor-pointer"
+                                                >
+                                                    {ubigeoData.departamentos.map(dep => (
+                                                        <option key={dep.id} value={dep.id}>{dep.nombre}</option>
+                                                    ))}
+                                                </select>
                                             </div>
 
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                                                     <span className="material-icons text-sm align-middle mr-1">location_city</span>
-                                                    Ciudad
+                                                    Provincia *
                                                 </label>
                                                 <select
-                                                    name="ciudad"
-                                                    value={form.ciudad}
+                                                    required
+                                                    name="provinciaId"
+                                                    value={form.provinciaId}
                                                     onChange={handleChange}
                                                     className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none dark:text-white cursor-pointer"
                                                 >
-                                                    <option value="Trujillo">Trujillo (La Libertad)</option>
-                                                    <option value="Lima">Lima</option>
-                                                    <option value="Arequipa">Arequipa</option>
-                                                    <option value="Chiclayo">Chiclayo</option>
-                                                    <option value="Piura">Piura</option>
-                                                    <option value="Cusco">Cusco</option>
-                                                    <option value="Ica">Ica</option>
-                                                    <option value="Huancayo">Huancayo</option>
-                                                    <option value="Tacna">Tacna</option>
-                                                    <option value="Otra">Otra ciudad</option>
+                                                    {provinciasDisponibles.map(prov => (
+                                                        <option key={prov.id} value={prov.id}>{prov.nombre}</option>
+                                                    ))}
                                                 </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                                    <span className="material-icons text-sm align-middle mr-1">place</span>
+                                                    Distrito {distritosDisponibles.length > 0 ? '*' : '(escribir)'}
+                                                </label>
+                                                {distritosDisponibles.length > 0 ? (
+                                                    <select
+                                                        required
+                                                        name="distritoId"
+                                                        value={form.distritoId}
+                                                        onChange={handleChange}
+                                                        className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none dark:text-white cursor-pointer"
+                                                    >
+                                                        <option value="">Seleccionar distrito</option>
+                                                        {distritosDisponibles.map(dist => (
+                                                            <option key={dist.id} value={dist.id}>{dist.nombre}</option>
+                                                        ))}
+                                                    </select>
+                                                ) : (
+                                                    <input
+                                                        type="text"
+                                                        name="distritoId"
+                                                        value={form.distritoId}
+                                                        onChange={handleChange}
+                                                        placeholder="Escribe tu distrito"
+                                                        className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none dark:text-white"
+                                                    />
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                                    <span className="material-icons text-sm align-middle mr-1">markunread_mailbox</span>
+                                                    Código Postal
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="codigoPostal"
+                                                    value={form.codigoPostal}
+                                                    onChange={handleChange}
+                                                    placeholder="Ej: 13001"
+                                                    maxLength="5"
+                                                    className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none dark:text-white"
+                                                />
                                             </div>
 
                                             <div>
@@ -352,17 +455,35 @@ export default function CheckoutPage() {
                                                 />
                                             </div>
 
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                                                    <span className="material-icons text-sm align-middle mr-1">badge</span>
+                                                    DNI *
+                                                </label>
+                                                <input
+                                                    required
+                                                    type="text"
+                                                    name="dni"
+                                                    value={form.dni}
+                                                    onChange={handleChange}
+                                                    placeholder="12345678"
+                                                    maxLength="8"
+                                                    pattern="[0-9]{8}"
+                                                    className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none dark:text-white"
+                                                />
+                                            </div>
+
                                             <div className="md:col-span-2">
                                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                                                    <span className="material-icons text-sm align-middle mr-1">notes</span>
-                                                    Notas (opcional)
+                                                    <span className="material-icons text-sm align-middle mr-1">local_shipping</span>
+                                                    Agencia de envío preferida / Referencia (opcional)
                                                 </label>
                                                 <textarea
                                                     name="notas"
                                                     value={form.notas}
                                                     onChange={handleChange}
                                                     rows="2"
-                                                    placeholder="Instrucciones especiales de entrega..."
+                                                    placeholder="Ej: Shalom, Olva Courier, Marvisur... o alguna referencia para identificar tu paquete"
                                                     className="w-full px-4 py-3.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-primary/50 outline-none dark:text-white resize-none"
                                                 />
                                             </div>
