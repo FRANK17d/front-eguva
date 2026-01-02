@@ -45,7 +45,7 @@ export default function PaymentStatusPage() {
                         </Link>
 
                         <Link
-                            to="/perfil/pedidos"
+                            to="/mis-pedidos"
                             className="block w-full py-4 bg-white dark:bg-gray-800 text-primary dark:text-white border border-gray-100 dark:border-gray-700 font-bold rounded-2xl hover:bg-gray-50 transition-colors"
                         >
                             Ver mis pedidos
