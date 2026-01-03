@@ -115,7 +115,10 @@ export default function CheckoutPage() {
             callbacks: {
                 onReady: () => setLoading(false),
                 onSubmit: ({ formData }) => {
-                    return pagosAPI.procesarPago({ payment: formData, pedidoId: orderId })
+                    // Obtener el device_id del SDK de MercadoPago (para prevención de fraude)
+                    const deviceId = window.MP_DEVICE_SESSION_ID || document.querySelector('input[name="MPHiddenInputToken"]')?.value || null;
+                    const paymentData = { ...formData, device_id: deviceId };
+                    return pagosAPI.procesarPago({ payment: paymentData, pedidoId: orderId })
                         .then((res) => {
                             if (res.data.status === 'approved') {
                                 clearCart();
@@ -194,13 +197,17 @@ export default function CheckoutPage() {
                 return;
             }
 
+            // Obtener el device_id para prevención de fraude
+            const deviceId = window.MP_DEVICE_SESSION_ID || null;
+
             const res = await pagosAPI.procesarPago({
                 payment: {
                     token: yapeToken.id,
                     transaction_amount: parseFloat(total.toFixed(2)),
                     installments: 1,
                     payment_method_id: 'yape',
-                    payer: { email: user.correo }
+                    payer: { email: user.correo },
+                    device_id: deviceId
                 },
                 pedidoId: orderId
             });
